@@ -1,0 +1,4 @@
+content: docs/content
+output: docs/public
+templates: docs/templates
+static: docs/static
