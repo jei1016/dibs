@@ -134,6 +134,10 @@ dibs schema       Dump the current schema
 - **Full ORM** - No lazy loading, no relation mapping magic. Just queries.
 - **Hiding SQL** - You should know what queries are running.
 
+## Thanks
+
+CI runs on [Depot](https://depot.dev/) runners — fast, affordable, and easy to set up.
+
 ## License
 
 MIT OR Apache-2.0
