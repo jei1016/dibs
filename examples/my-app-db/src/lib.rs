@@ -2,10 +2,13 @@
 //!
 //! This crate defines the database schema using facet reflection.
 
+mod migrations;
+
 use facet::Facet;
 
 /// A user in the system.
 #[derive(Debug, Clone, Facet)]
+#[facet(derive(dibs::Table))]
 #[facet(dibs::table = "users")]
 pub struct User {
     /// Primary key
@@ -29,6 +32,7 @@ pub struct User {
 
 /// A blog post.
 #[derive(Debug, Clone, Facet)]
+#[facet(derive(dibs::Table))]
 #[facet(dibs::table = "posts")]
 pub struct Post {
     /// Primary key
