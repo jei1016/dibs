@@ -22,9 +22,11 @@ pub struct User {
     pub email: String,
 
     /// Display name
+    #[facet(dibs::label)]
     pub name: String,
 
     /// Optional bio
+    #[facet(dibs::long)]
     pub bio: Option<String>,
 
     /// URL to avatar image
@@ -70,7 +72,7 @@ pub struct Category {
     pub id: i64,
 
     /// Category name
-    #[facet(dibs::unique)]
+    #[facet(dibs::unique, dibs::label)]
     pub name: String,
 
     /// URL-friendly slug
@@ -78,6 +80,7 @@ pub struct Category {
     pub slug: String,
 
     /// Category description
+    #[facet(dibs::long)]
     pub description: Option<String>,
 
     /// Parent category (self-referencing FK for hierarchy)
@@ -107,6 +110,7 @@ pub struct Post {
     pub category_id: Option<i64>,
 
     /// Post title
+    #[facet(dibs::label)]
     pub title: String,
 
     /// URL-friendly slug
@@ -114,9 +118,11 @@ pub struct Post {
     pub slug: String,
 
     /// Short summary/excerpt
+    #[facet(dibs::long)]
     pub excerpt: Option<String>,
 
     /// Post content (markdown)
+    #[facet(dibs::long)]
     pub body: String,
 
     /// Featured image URL
@@ -152,7 +158,7 @@ pub struct Tag {
     pub id: i64,
 
     /// Tag name
-    #[facet(dibs::unique)]
+    #[facet(dibs::unique, dibs::label)]
     pub name: String,
 
     /// URL-friendly slug
@@ -199,6 +205,7 @@ pub struct Comment {
     pub parent_id: Option<i64>,
 
     /// Comment content
+    #[facet(dibs::long)]
     pub body: String,
 
     /// Whether the comment is approved/visible
