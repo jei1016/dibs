@@ -1,0 +1,16 @@
+[package]
+name = "my-app-db"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "my-app-db"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+dibs = { path = "../../crates/dibs" }
+facet = { git = "https://github.com/facet-rs/facet", branch = "main" }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

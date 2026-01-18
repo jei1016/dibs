@@ -1,0 +1,3 @@
+db {
+    crate my-app-db
+}
