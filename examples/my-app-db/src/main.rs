@@ -235,7 +235,7 @@ async fn seed() -> Result<(), Box<dyn std::error::Error>> {
         client
             .execute(
                 "INSERT INTO posts (id, author_id, category_id, title, slug, excerpt, body, published, view_count, published_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CASE WHEN $8 THEN now() - interval '1 day' * (14 - $1) ELSE NULL END)",
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CASE WHEN $8 THEN now() - interval '1 day' * (14 - $1::int) ELSE NULL END)",
                 &[&id, &author_id, &category_id, &title, &slug, &excerpt, &body, &published, &view_count],
             )
             .await?;

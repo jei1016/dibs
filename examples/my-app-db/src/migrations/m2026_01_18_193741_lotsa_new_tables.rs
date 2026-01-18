@@ -1,5 +1,5 @@
 //! Migration: lotsa-new-tables
-//! Created: 2026-01-18 18:52:42 CET
+//! Created: 2026-01-18 19:37:41 CET
 
 use dibs::{MigrationContext, Result};
 
@@ -32,16 +32,18 @@ CREATE TABLE comments (
     // Table: post_likes
     ctx.execute(r#"
 CREATE TABLE post_likes (
-    user_id BIGINT PRIMARY KEY,
-    post_id BIGINT PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    user_id BIGINT NOT NULL,
+    post_id BIGINT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, post_id)
 )
 "#).await?;
     // Table: post_tags
     ctx.execute(r#"
 CREATE TABLE post_tags (
-    post_id BIGINT PRIMARY KEY,
-    tag_id BIGINT PRIMARY KEY
+    post_id BIGINT NOT NULL,
+    tag_id BIGINT NOT NULL,
+    PRIMARY KEY (post_id, tag_id)
 )
 "#).await?;
     // Table: posts
@@ -66,9 +68,10 @@ CREATE TABLE tags (
     // Table: user_follows
     ctx.execute(r#"
 CREATE TABLE user_follows (
-    follower_id BIGINT PRIMARY KEY,
-    following_id BIGINT PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    follower_id BIGINT NOT NULL,
+    following_id BIGINT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (follower_id, following_id)
 )
 "#).await?;
     // Table: users
