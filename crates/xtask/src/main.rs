@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
@@ -19,9 +20,13 @@ fn main() {
 }
 
 fn install() {
+    // Find workspace root by looking for Cargo.toml with [workspace]
+    let workspace_root = find_workspace_root().expect("Could not find workspace root");
+
     // Build release binary
     let status = Command::new("cargo")
         .args(["build", "--release", "-p", "dibs-cli"])
+        .current_dir(&workspace_root)
         .status()
         .expect("Failed to run cargo build");
 
@@ -29,13 +34,13 @@ fn install() {
         std::process::exit(status.code().unwrap_or(1));
     }
 
-    let src = "target/release/dibs";
+    let src = workspace_root.join("target/release/dibs");
 
     // Copy to ~/.cargo/bin
     let home = std::env::var("HOME").expect("HOME not set");
     let dst = format!("{}/.cargo/bin/dibs", home);
 
-    std::fs::copy(src, &dst).expect("Failed to copy binary");
+    std::fs::copy(&src, &dst).expect("Failed to copy binary");
     println!("Copied dibs to {}", dst);
 
     // On macOS, codesign the installed binary to avoid AMFI issues
@@ -68,4 +73,25 @@ fn install() {
 
     let version = String::from_utf8_lossy(&output.stdout);
     println!("Installed: {}", version.trim());
+}
+
+/// Find the workspace root by walking up from the current directory
+/// looking for a Cargo.toml with [workspace].
+fn find_workspace_root() -> Option<PathBuf> {
+    let mut dir = std::env::current_dir().ok()?;
+
+    loop {
+        let cargo_toml = dir.join("Cargo.toml");
+        if cargo_toml.exists() {
+            if let Ok(contents) = std::fs::read_to_string(&cargo_toml) {
+                if contents.contains("[workspace]") {
+                    return Some(dir);
+                }
+            }
+        }
+
+        if !dir.pop() {
+            return None;
+        }
+    }
 }
