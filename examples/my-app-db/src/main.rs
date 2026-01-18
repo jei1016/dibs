@@ -7,17 +7,18 @@
 use my_app_db::{Post, User};
 use tokio_postgres::NoTls;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Touch the types so they're not dead code eliminated
     let _ = (std::any::type_name::<User>(), std::any::type_name::<Post>());
 
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() > 1 && args[1] == "seed" {
-        seed().await?;
+        // Seed needs async runtime
+        let rt = tokio::runtime::Runtime::new()?;
+        rt.block_on(seed())?;
     } else {
-        // Run the dibs service (connects back to CLI via roam)
+        // run_service creates its own runtime
         dibs::run_service();
     }
 

@@ -4,19 +4,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "pnpm codegen && vite",
+    "build": "pnpm codegen && vite build",
     "preview": "vite preview",
     "codegen": "cargo run -p dibs-codegen --manifest-path ../../Cargo.toml -- --typescript --service squel --output src/lib/generated"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "@tailwindcss/vite": "^4.1.18",
     "svelte": "^5.0.0",
     "svelte-check": "^4.2.1",
+    "tailwindcss": "^4.1.18",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"
   },
   "dependencies": {
+    "@bearcove/dibs-admin": "link:../../packages/dibs-admin",
     "@bearcove/roam-core": "link:../../../roam/typescript/packages/roam-core",
     "@bearcove/roam-ws": "link:../../../roam/typescript/packages/roam-ws"
   }

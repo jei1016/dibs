@@ -27,7 +27,7 @@ pub struct User {
 
     /// When the user was created
     #[facet(dibs::default = "now()")]
-    pub created_at: String,
+    pub created_at: jiff::Timestamp,
 }
 
 /// A blog post.
@@ -55,5 +55,5 @@ pub struct Post {
 
     /// When the post was created
     #[facet(dibs::default = "now()")]
-    pub created_at: String,
+    pub created_at: jiff::Timestamp,
 }
