@@ -1,3 +1,13 @@
 [workspace]
 members = ["crates/*", "examples/*"]
+exclude = ["examples/admin-ui"]
 resolver = "3"
+
+# Use local roam for development
+[patch."https://github.com/bearcove/roam"]
+roam = { path = "/Users/amos/bearcove/roam/rust/roam" }
+roam-codegen = { path = "/Users/amos/bearcove/roam/rust/roam-codegen" }
+roam-schema = { path = "/Users/amos/bearcove/roam/rust/roam-schema" }
+roam-stream = { path = "/Users/amos/bearcove/roam/rust/roam-stream" }
+roam-websocket = { path = "/Users/amos/bearcove/roam/rust/roam-websocket" }
+roam-session = { path = "/Users/amos/bearcove/roam/rust/roam-session" }

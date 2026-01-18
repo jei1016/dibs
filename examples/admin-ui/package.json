@@ -1,0 +1,23 @@
+{
+  "name": "admin-ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "codegen": "cargo run -p dibs-codegen --manifest-path ../../Cargo.toml -- --typescript --service squel --output src/lib/generated"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "svelte": "^5.0.0",
+    "svelte-check": "^4.2.1",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  },
+  "dependencies": {
+    "@bearcove/roam-core": "link:../../../roam/typescript/packages/roam-core",
+    "@bearcove/roam-ws": "link:../../../roam/typescript/packages/roam-ws"
+  }
+}

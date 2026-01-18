@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.env.*
+!.env.example
+
+# Generated files (run `bun run codegen` to regenerate)
+src/lib/generated/

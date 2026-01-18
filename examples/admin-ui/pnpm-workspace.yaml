@@ -1,0 +1,3 @@
+overrides:
+  '@bearcove/roam-core': link:../../../roam/typescript/packages/roam-core
+  '@bearcove/roam-ws': link:../../../roam/typescript/packages/roam-ws
