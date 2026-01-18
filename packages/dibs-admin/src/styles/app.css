@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+/* Custom theme variables */
+:root {
+  --da-bg-primary: #1a1a2e;
+  --da-bg-secondary: #16213e;
+  --da-bg-tertiary: #0f3460;
+  --da-text-primary: #eee;
+  --da-text-secondary: #aaa;
+  --da-accent: #e94560;
+  --da-border: #0f3460;
+  --da-error: #e94560;
+  --da-success: #4ade80;
+}
+
+/* Base styles for dibs-admin */
+.dibs-admin {
+  @apply font-sans text-gray-100 min-h-full;
+  background: var(--da-bg-primary);
+}

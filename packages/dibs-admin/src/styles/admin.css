@@ -1,0 +1,408 @@
+/* DibsAdmin component styles */
+
+.dibs-admin {
+    --da-bg-primary: #1a1a2e;
+    --da-bg-secondary: #16213e;
+    --da-bg-tertiary: #0f3460;
+    --da-text-primary: #eee;
+    --da-text-secondary: #aaa;
+    --da-accent: #e94560;
+    --da-border: #0f3460;
+    --da-error: #e94560;
+    --da-success: #4ade80;
+
+    font-family:
+        system-ui,
+        -apple-system,
+        sans-serif;
+    background: var(--da-bg-primary);
+    color: var(--da-text-primary);
+    min-height: 100%;
+}
+
+/* Layout */
+.dibs-admin .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 1rem;
+    height: 100%;
+    padding: 1rem;
+}
+
+/* Sidebar */
+.dibs-admin .sidebar {
+    background: var(--da-bg-secondary);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.dibs-admin .sidebar h2 {
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--da-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.dibs-admin .sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.dibs-admin .sidebar li {
+    margin: 0.25rem 0;
+}
+
+.dibs-admin .sidebar .table-btn {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    color: var(--da-text-primary);
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.dibs-admin .sidebar .table-btn:hover {
+    background: var(--da-bg-tertiary);
+}
+
+.dibs-admin .sidebar .table-btn.selected {
+    background: var(--da-bg-tertiary);
+    border-left: 3px solid var(--da-accent);
+    padding-left: calc(0.75rem - 3px);
+}
+
+/* Main content */
+.dibs-admin .content {
+    background: var(--da-bg-secondary);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.dibs-admin .content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.dibs-admin .content-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+/* Buttons */
+.dibs-admin button {
+    background: var(--da-bg-tertiary);
+    color: var(--da-text-primary);
+    border: 1px solid var(--da-border);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dibs-admin button:hover:not(:disabled) {
+    background: #1a4a7a;
+}
+
+.dibs-admin button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dibs-admin button.primary {
+    background: var(--da-accent);
+    border-color: var(--da-accent);
+}
+
+.dibs-admin button.primary:hover:not(:disabled) {
+    background: #c93850;
+}
+
+.dibs-admin button.danger {
+    background: transparent;
+    border-color: var(--da-error);
+    color: var(--da-error);
+}
+
+.dibs-admin button.danger:hover:not(:disabled) {
+    background: rgba(233, 69, 96, 0.1);
+}
+
+.dibs-admin button.icon-btn {
+    padding: 0.375rem;
+    background: transparent;
+    border: none;
+}
+
+.dibs-admin button.icon-btn:hover:not(:disabled) {
+    background: var(--da-bg-tertiary);
+}
+
+/* Error message */
+.dibs-admin .error {
+    color: var(--da-error);
+    background: rgba(233, 69, 96, 0.1);
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin: 0 0 1rem;
+    font-size: 0.875rem;
+}
+
+/* Loading */
+.dibs-admin .loading {
+    color: var(--da-text-secondary);
+    padding: 2rem;
+    text-align: center;
+}
+
+/* Empty state */
+.dibs-admin .empty {
+    color: var(--da-text-secondary);
+    padding: 2rem;
+    text-align: center;
+}
+
+/* Data Table */
+.dibs-admin .table-container {
+    flex: 1;
+    overflow: auto;
+}
+
+.dibs-admin table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.dibs-admin th,
+.dibs-admin td {
+    padding: 0.625rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--da-border);
+}
+
+.dibs-admin th {
+    background: var(--da-bg-tertiary);
+    color: var(--da-text-secondary);
+    font-weight: 500;
+    position: sticky;
+    top: 0;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.dibs-admin th:hover {
+    background: #1a4a7a;
+}
+
+.dibs-admin th .sort-indicator {
+    margin-left: 0.5rem;
+    opacity: 0.5;
+}
+
+.dibs-admin th .sort-indicator.active {
+    opacity: 1;
+    color: var(--da-accent);
+}
+
+.dibs-admin td {
+    font-family: "SF Mono", "Menlo", "Monaco", monospace;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dibs-admin td.null {
+    color: var(--da-text-secondary);
+    font-style: italic;
+}
+
+.dibs-admin tr.clickable {
+    cursor: pointer;
+}
+
+.dibs-admin tr.clickable:hover td {
+    background: rgba(15, 52, 96, 0.5);
+}
+
+/* Pagination */
+.dibs-admin .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--da-border);
+}
+
+.dibs-admin .pagination span {
+    color: var(--da-text-secondary);
+    font-size: 0.85rem;
+}
+
+/* Filter bar */
+.dibs-admin .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: var(--da-bg-primary);
+    border-radius: 6px;
+}
+
+.dibs-admin .filter-bar select,
+.dibs-admin .filter-bar input {
+    background: var(--da-bg-secondary);
+    color: var(--da-text-primary);
+    border: 1px solid var(--da-border);
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.dibs-admin .filter-bar select:focus,
+.dibs-admin .filter-bar input:focus {
+    outline: none;
+    border-color: var(--da-accent);
+}
+
+.dibs-admin .filter-bar input {
+    flex: 1;
+    min-width: 150px;
+}
+
+.dibs-admin .active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.dibs-admin .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--da-bg-tertiary);
+    padding: 0.375rem 0.625rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.dibs-admin .filter-chip button {
+    padding: 0.125rem;
+    background: transparent;
+    border: none;
+    color: var(--da-text-secondary);
+    cursor: pointer;
+}
+
+.dibs-admin .filter-chip button:hover {
+    color: var(--da-error);
+}
+
+/* Modal */
+.dibs-admin .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.dibs-admin .modal {
+    background: var(--da-bg-secondary);
+    border-radius: 8px;
+    padding: 1.5rem;
+    width: 500px;
+    max-width: 90vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.dibs-admin .modal h3 {
+    margin: 0 0 1.25rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.dibs-admin .modal .form-group {
+    margin-bottom: 1rem;
+}
+
+.dibs-admin .modal label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.85rem;
+    color: var(--da-text-secondary);
+}
+
+.dibs-admin .modal input,
+.dibs-admin .modal textarea {
+    width: 100%;
+    background: var(--da-bg-primary);
+    color: var(--da-text-primary);
+    border: 1px solid var(--da-border);
+    padding: 0.625rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-family: inherit;
+}
+
+.dibs-admin .modal input:focus,
+.dibs-admin .modal textarea:focus {
+    outline: none;
+    border-color: var(--da-accent);
+}
+
+.dibs-admin .modal input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.dibs-admin .modal .form-hint {
+    font-size: 0.75rem;
+    color: var(--da-text-secondary);
+    margin-top: 0.25rem;
+}
+
+.dibs-admin .modal .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--da-border);
+}
+
+.dibs-admin .modal .modal-actions-left {
+    margin-right: auto;
+}
+
+/* Toolbar */
+.dibs-admin .toolbar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
