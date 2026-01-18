@@ -26,8 +26,8 @@
     let limit = $state(25);
     let offset = $state(0);
 
-    // Database URL - in a real app this would come from config
-    const DATABASE_URL = "postgres://localhost/myapp";
+    // Database URL - matches my-app-db/.env default
+    const DATABASE_URL = "postgres://localhost/dibs_test";
 
     async function handleConnect() {
         connecting = true;
@@ -89,6 +89,10 @@
 
     function formatValue(value: Value): string {
         if (value.tag === "Null") return "null";
+        // BigInt can't be JSON.stringify'd, so handle it specially
+        if (typeof value.value === "bigint") {
+            return value.value.toString();
+        }
         return JSON.stringify(value.value);
     }
 
