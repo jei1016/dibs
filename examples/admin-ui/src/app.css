@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../../../packages/dibs-admin/src/styles/app.css";
 @source "../../../packages/dibs-admin/src/**/*.svelte";
 
 @font-face {

@@ -38,9 +38,9 @@
     </style>
 </svelte:head>
 
-<main class="min-h-screen flex flex-col bg-neutral-950 text-neutral-100">
-    <header class="px-6 py-4 border-b border-neutral-900 flex items-center gap-3">
-        <h1 class="text-sm font-medium uppercase tracking-widest text-neutral-400">dibs admin</h1>
+<main class="min-h-screen flex flex-col bg-background text-foreground">
+    <header class="px-6 py-4 border-b border-border flex items-center gap-3">
+        <h1 class="text-sm font-medium uppercase tracking-widest text-muted-foreground">dibs admin</h1>
         {#if connected}
             <span class="w-2 h-2 bg-green-500"></span>
         {:else if connecting}
@@ -53,19 +53,19 @@
     {#if !connected && !connecting}
         <div class="flex-1 flex flex-col items-center justify-center gap-6 p-8">
             {#if error}
-                <p class="text-red-400 text-sm mb-4">
+                <p class="text-destructive text-sm mb-4">
                     {error}
                 </p>
             {/if}
             <button
-                class="bg-white text-neutral-900 hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed px-6 py-3 text-sm font-medium transition-colors"
+                class="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed px-6 py-3 text-sm font-medium transition-colors rounded-md"
                 onclick={handleConnect}
             >
                 Retry connection
             </button>
         </div>
     {:else if connecting}
-        <div class="flex-1 flex items-center justify-center text-neutral-500">
+        <div class="flex-1 flex items-center justify-center text-muted-foreground">
             Connecting...
         </div>
     {:else}

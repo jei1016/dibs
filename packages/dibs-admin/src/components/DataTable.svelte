@@ -190,7 +190,7 @@
                 {@const clickable = onRowClick !== undefined}
                 <tr
                     class="border-t border-border transition-all duration-150 {clickable
-                        ? 'cursor-pointer hover:bg-accent/50 hover:border-l-2 hover:border-l-primary'
+                        ? 'cursor-pointer border-l-2 border-l-transparent hover:bg-accent/50 hover:border-l-primary'
                         : ''}"
                     onclick={() => handleRowClick(row)}
                 >
