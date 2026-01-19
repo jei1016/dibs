@@ -24,3 +24,24 @@ export type {
     DibsError,
     Result,
 } from './types.js';
+
+// Re-export config types
+export type {
+    DibsAdminConfig,
+    DashboardConfig,
+    DashboardTile,
+    LatestRecordsTile,
+    CountTile,
+    QuickLinksTile,
+    CustomTile,
+    TableConfig,
+    ListViewConfig,
+    RowExpandConfig,
+    DetailConfig,
+    FieldGroupConfig,
+    RelationConfig,
+    SortConfig,
+    FilterConfig,
+    FieldRenderer,
+    TableDefaults,
+} from './types/config.js';

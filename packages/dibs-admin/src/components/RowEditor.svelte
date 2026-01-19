@@ -15,6 +15,7 @@
     import FkSelect from "./FkSelect.svelte";
     import DynamicIcon from "./DynamicIcon.svelte";
     import CodeMirrorEditor from "./CodeMirrorEditor.svelte";
+    import RelatedTables from "./RelatedTables.svelte";
 
     interface Props {
         columns: ColumnInfo[];
@@ -32,6 +33,8 @@
         // Display mode
         fullscreen?: boolean;
         tableName?: string;
+        // Navigation callback for related records
+        onNavigate?: (table: string, pkValue: Value) => void;
     }
 
     let {
@@ -48,6 +51,7 @@
         databaseUrl,
         fullscreen = false,
         tableName = "",
+        onNavigate,
     }: Props = $props();
 
     // Form state - map column name to string value
@@ -512,7 +516,7 @@
     <!-- Full-screen panel mode -->
     <div class="h-full max-h-screen flex flex-col bg-background overflow-hidden">
         <!-- Header with back button -->
-        <header class="flex items-center gap-4 px-8 py-4 border-b border-border shrink-0">
+        <header class="flex items-center gap-4 px-6 md:px-8 py-4 border-b border-border shrink-0">
             <Button variant="ghost" size="icon" onclick={onClose}>
                 <ArrowLeft size={20} />
             </Button>
@@ -524,14 +528,28 @@
         </header>
 
         <!-- Scrollable form content -->
-        <div class="flex-1 min-h-0 overflow-y-auto p-8">
-            <div class="max-w-2xl space-y-4">
+        <div class="flex-1 min-h-0 overflow-y-auto p-6 md:p-8">
+            <div class="space-y-6">
                 {@render formFields()}
             </div>
+
+            <!-- Related tables section (only when viewing existing row) -->
+            {#if row && table && schema && client && databaseUrl}
+                <div class="mt-8">
+                    <RelatedTables
+                        currentTable={table}
+                        currentRow={row}
+                        {schema}
+                        {client}
+                        {databaseUrl}
+                        {onNavigate}
+                    />
+                </div>
+            {/if}
         </div>
 
         <!-- Footer with actions -->
-        <footer class="flex items-center gap-4 px-8 py-4 border-t border-border shrink-0">
+        <footer class="flex items-center gap-4 px-6 md:px-8 py-4 border-t border-border shrink-0">
             {@render footer()}
         </footer>
     </div>

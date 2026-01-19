@@ -1,10 +1,12 @@
 <script lang="ts">
     import { CaretUp, CaretDown, Clock, Hash, TextT, ToggleLeft, Calendar, Timer, Binary, ArrowSquareOut } from "phosphor-svelte";
     import type { Row, ColumnInfo, Value, Sort, SortDir, TableInfo, SchemaInfo, SquelClient } from "../types.js";
+    import type { RowExpandConfig } from "../types/config.js";
     import type { Component } from "svelte";
     import { getFkForColumn, getTableByName } from "../lib/fk-utils.js";
     import FkCell from "./FkCell.svelte";
     import DynamicIcon from "./DynamicIcon.svelte";
+    import MarkdownRenderer from "./MarkdownRenderer.svelte";
 
     interface Props {
         columns: ColumnInfo[];
@@ -19,12 +21,18 @@
         databaseUrl?: string;
         onFkClick?: (targetTable: string, pkValue: Value) => void;
         fkLookup?: Map<string, Map<string, Row>>;
+        // Time display mode
+        timeMode?: "relative" | "absolute";
+        // Row expansion
+        rowExpand?: RowExpandConfig;
+        // Image columns
+        imageColumns?: string[];
     }
 
-    let { columns, rows, sort, onSort, onRowClick, table, schema, client, databaseUrl, onFkClick, fkLookup }: Props = $props();
+    let { columns, rows, sort, onSort, onRowClick, table, schema, client, databaseUrl, onFkClick, fkLookup, timeMode = "relative", rowExpand, imageColumns = [] }: Props = $props();
 
-    // Time display mode: "relative" or "absolute"
-    let timeMode = $state<"relative" | "absolute">("relative");
+    // Track which rows have expanded content
+    let expandedRows = $state<Set<number>>(new Set());
 
     function isTimestampColumn(col: ColumnInfo): boolean {
         const t = col.sql_type.toUpperCase();
@@ -146,20 +154,44 @@
         const pkStr = typeof value.value === "bigint" ? value.value.toString() : String(value.value);
         return tableCache.get(pkStr);
     }
+
+    // Get expanded content for a row
+    function getExpandedContent(row: Row): string | null {
+        if (!rowExpand) return null;
+        const field = row.fields.find((f) => f.name === rowExpand.field);
+        if (!field || field.value.tag === "Null") return null;
+        if (field.value.tag === "String") return field.value.value;
+        return String(field.value.value);
+    }
+
+    // Check if a column should be rendered as an image
+    function isImageColumn(colName: string): boolean {
+        return imageColumns.includes(colName);
+    }
+
+    // Get preview of content (first N lines)
+    function getPreview(content: string, lines: number = 3): { preview: string; truncated: boolean } {
+        const allLines = content.split('\n');
+        if (allLines.length <= lines) {
+            return { preview: content, truncated: false };
+        }
+        return { preview: allLines.slice(0, lines).join('\n'), truncated: true };
+    }
+
+    // Toggle expanded state for a row
+    function toggleExpanded(rowIndex: number, e: Event) {
+        e.stopPropagation();
+        const newSet = new Set(expandedRows);
+        if (newSet.has(rowIndex)) {
+            newSet.delete(rowIndex);
+        } else {
+            newSet.add(rowIndex);
+        }
+        expandedRows = newSet;
+    }
 </script>
 
 <div class="flex-1 overflow-auto">
-    {#if columns.some(isTimestampColumn)}
-        <div class="flex justify-end mb-3">
-            <button
-                class="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                onclick={() => timeMode = timeMode === "relative" ? "absolute" : "relative"}
-            >
-                <Clock size={14} />
-                {timeMode === "relative" ? "relative" : "absolute"}
-            </button>
-        </div>
-    {/if}
     <table class="w-full border-collapse text-sm">
         <thead>
             <tr>
@@ -189,6 +221,7 @@
         <tbody>
             {#each rows as row}
                 {@const clickable = onRowClick !== undefined}
+                {@const expandedContent = getExpandedContent(row)}
                 <tr
                     class="border-t border-border transition-all duration-150 {clickable
                         ? 'cursor-pointer border-l-2 border-l-transparent hover:bg-accent/50 hover:border-l-primary'
@@ -210,7 +243,13 @@
                                 {:else if TypeIcon}
                                     <TypeIcon size={12} class="text-muted-foreground/60 flex-shrink-0" />
                                 {/if}
-                                {#if fkInfo && client && databaseUrl && rawValue.tag !== "Null"}
+                                {#if isImageColumn(col.name) && rawValue.tag === "String" && rawValue.value}
+                                    <img
+                                        src={rawValue.value}
+                                        alt={col.name}
+                                        class="w-8 h-8 rounded-full object-cover"
+                                    />
+                                {:else if fkInfo && client && databaseUrl && rawValue.tag !== "Null"}
                                     {@const cachedRow = getCachedFkRow(fkInfo.fkTable.name, rawValue)}
                                     <FkCell
                                         value={rawValue}
@@ -228,6 +267,38 @@
                         </td>
                     {/each}
                 </tr>
+                {#if expandedContent}
+                    {@const rowIndex = rows.indexOf(row)}
+                    {@const isExpanded = expandedRows.has(rowIndex)}
+                    {@const previewLines = rowExpand?.previewLines ?? 3}
+                    {@const previewData = getPreview(expandedContent, previewLines)}
+                    {@const displayContent = isExpanded ? expandedContent : previewData.preview}
+                    <tr class="bg-muted/30">
+                        <td
+                            colspan={columns.length}
+                            class="px-4 py-3 text-sm"
+                        >
+                            {#if rowExpand?.render === "markdown"}
+                                <div class="prose prose-sm dark:prose-invert max-w-none">
+                                    <MarkdownRenderer content={displayContent} />
+                                </div>
+                            {:else if rowExpand?.render === "code"}
+                                <pre class="font-mono text-xs bg-muted p-3 rounded overflow-x-auto"><code>{displayContent}</code></pre>
+                            {:else}
+                                <div class="whitespace-pre-wrap">{displayContent}</div>
+                            {/if}
+                            {#if previewData.truncated}
+                                <button
+                                    type="button"
+                                    class="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                    onclick={(e) => toggleExpanded(rowIndex, e)}
+                                >
+                                    {isExpanded ? "Show less" : "Show more..."}
+                                </button>
+                            {/if}
+                        </td>
+                    </tr>
+                {/if}
             {/each}
         </tbody>
     </table>

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { untrack } from "svelte";
-    import { Plus } from "phosphor-svelte";
+    import { Plus, House } from "phosphor-svelte";
     import DynamicIcon from "./components/DynamicIcon.svelte";
     import type {
         SquelClient,
@@ -13,29 +13,49 @@
         Value,
         ListRequest,
     } from "./types.js";
+    import type { DibsAdminConfig } from "./types/config.js";
     import TableList from "./components/TableList.svelte";
     import DataTable from "./components/DataTable.svelte";
     import FilterInput from "./components/FilterInput.svelte";
     import Pagination from "./components/Pagination.svelte";
     import RowEditor from "./components/RowEditor.svelte";
+    import RowDetail from "./components/RowDetail.svelte";
     import Breadcrumb from "./components/Breadcrumb.svelte";
+    import Dashboard from "./components/Dashboard.svelte";
     import { Button } from "./lib/components/ui/index.js";
     import { Tooltip } from "./lib/components/ui/index.js";
     import type { BreadcrumbEntry } from "./lib/fk-utils.js";
     import { createBreadcrumbLabel, getTableByName, getPkValue } from "./lib/fk-utils.js";
+    import {
+        isTableHidden,
+        getTableLabel,
+        getDisplayColumns,
+        getPageSize,
+        getDefaultSort,
+        getDefaultFilters,
+        hasDashboard,
+        getListConfig,
+        isColumnSortable,
+        getRowExpand,
+        getImageColumns,
+    } from "./lib/config.js";
 
     interface Props {
         client: SquelClient;
         databaseUrl: string;
+        config?: DibsAdminConfig;
     }
 
-    let { client, databaseUrl }: Props = $props();
+    let { client, databaseUrl, config }: Props = $props();
 
     // Schema state
     let schema = $state<SchemaInfo | null>(null);
     let selectedTable = $state<string | null>(null);
     let loading = $state(false);
     let error = $state<string | null>(null);
+
+    // Dashboard state
+    let showDashboard = $state(false);
 
     // Data state
     let rows = $state<Row[]>([]);
@@ -44,7 +64,7 @@
     // Query state
     let filters = $state<Filter[]>([]);
     let sort = $state<Sort | null>(null);
-    let limit = $state(25);
+    let limit = $derived(selectedTable ? getPageSize(config, selectedTable) : 25);
     let offset = $state(0);
 
     // Router state - prevent infinite loops
@@ -62,12 +82,23 @@
     // Breadcrumb navigation state
     let breadcrumbs = $state<BreadcrumbEntry[]>([]);
 
+    // Time display mode for timestamps
+    let timeMode = $state<"relative" | "absolute">("relative");
+
     // FK lookup cache: table name -> pk string -> Row
     let fkLookup = $state<Map<string, Map<string, Row>>>(new Map());
 
     // Derived
     let currentTable = $derived(schema?.tables.find((t) => t.name === selectedTable) ?? null);
     let columns = $derived(currentTable?.columns ?? []);
+    let displayColumns = $derived(
+        getDisplayColumns(columns, getListConfig(config, selectedTable ?? ""))
+    );
+
+    // Filter tables to exclude hidden ones
+    let visibleTables = $derived(
+        schema?.tables.filter((t) => !isTableHidden(config, t.name)) ?? []
+    );
 
     // ==========================================================================
     // Hash-based routing
@@ -83,6 +114,11 @@
     );
 
     function encodeHash(): string {
+        // Dashboard view: #/
+        if (showDashboard) {
+            return "#/";
+        }
+
         if (!selectedTable) return "";
 
         // Detail view: #/table/pk
@@ -131,18 +167,33 @@
     }
 
     type DecodedHash = {
-        table: string;
+        table: string | null;
         filters: Filter[];
         sort: Sort | null;
         offset: number;
         rowPk: string | null; // If viewing a specific row
         isCreating: boolean; // If creating a new row
+        isDashboard: boolean; // If showing dashboard
     };
 
     function decodeHash(hash: string, schemaInfo?: SchemaInfo | null): DecodedHash | null {
         if (!hash || !hash.startsWith("#/")) return null;
 
         const withoutHash = hash.slice(2); // Remove "#/"
+
+        // Dashboard view: empty path after #/
+        if (withoutHash === "" || withoutHash === "/") {
+            return {
+                table: null,
+                filters: [],
+                sort: null,
+                offset: 0,
+                rowPk: null,
+                isCreating: false,
+                isDashboard: true,
+            };
+        }
+
         const [pathPart, queryPart] = withoutHash.split("?");
         const pathSegments = pathPart.split("/").map(s => decodeURIComponent(s));
 
@@ -196,7 +247,7 @@
             }
         }
 
-        return { table, filters, sort, offset, rowPk, isCreating };
+        return { table, filters, sort, offset, rowPk, isCreating, isDashboard: false };
     }
 
     function decodeValue(str: string, field: string, tableInfo?: TableInfo | null): Value {
@@ -235,10 +286,23 @@
 
         isUpdatingFromHash = true;
 
+        // Handle dashboard view
+        if (decoded.isDashboard) {
+            showDashboard = true;
+            selectedTable = null;
+            editingPk = null;
+            editingRow = null;
+            isCreating = false;
+            isUpdatingFromHash = false;
+            return;
+        }
+
+        showDashboard = false;
+
         // Only apply if different from current state
         if (decoded.table !== selectedTable) {
             selectedTable = decoded.table;
-            breadcrumbs = [{ table: decoded.table, label: decoded.table }];
+            breadcrumbs = decoded.table ? [{ table: decoded.table, label: decoded.table }] : [];
         }
 
         filters = decoded.filters;
@@ -312,8 +376,9 @@
         void offset;
         void editingPk;
         void isCreating;
+        void showDashboard;
         // Update hash (but not during initial load or when applying hash)
-        if (schema && selectedTable) {
+        if (schema && (selectedTable || showDashboard)) {
             updateHash();
         }
     });
@@ -334,9 +399,15 @@
             if (schema.tables.length > 0) {
                 // Check if there's a hash to apply
                 const decoded = decodeHash(window.location.hash, schema);
-                if (decoded && schema.tables.some(t => t.name === decoded.table)) {
-                    // Apply hash state
+
+                // Handle dashboard view from hash
+                if (decoded?.isDashboard && hasDashboard(config)) {
+                    showDashboard = true;
+                    // No need to load table data for dashboard
+                } else if (decoded && decoded.table && schema.tables.some(t => t.name === decoded.table)) {
+                    // Apply hash state for table view
                     isUpdatingFromHash = true;
+                    showDashboard = false;
                     selectedTable = decoded.table;
                     filters = decoded.filters;
                     sort = decoded.sort;
@@ -361,9 +432,15 @@
                     if (decoded.rowPk !== null) {
                         await loadRowByPk(decoded.rowPk);
                     }
+                } else if (hasDashboard(config)) {
+                    // Default to dashboard if configured
+                    showDashboard = true;
                 } else {
-                    // Default to first table
-                    selectTable(schema.tables[0].name);
+                    // Default to first visible table
+                    const firstVisible = schema.tables.find(t => !isTableHidden(config, t.name));
+                    if (firstVisible) {
+                        selectTable(firstVisible.name);
+                    }
                 }
             }
         } catch (e) {
@@ -537,6 +614,7 @@
     }
 
     function selectTable(tableName: string, resetBreadcrumbs = true) {
+        showDashboard = false;
         selectedTable = tableName;
         filters = [];
         sort = null;
@@ -549,6 +627,15 @@
             breadcrumbs = [{ table: tableName, label: tableName }];
         }
         loadData();
+    }
+
+    function goToDashboard() {
+        showDashboard = true;
+        selectedTable = null;
+        editingPk = null;
+        editingRow = null;
+        isCreating = false;
+        breadcrumbs = [];
     }
 
     // Navigate to an FK target
@@ -750,6 +837,81 @@
         }
     }
 
+    // Save a single field (for inline editing)
+    async function saveField(fieldName: string, newValue: Value) {
+        if (!selectedTable || !editingRow) {
+            throw new Error("No row being edited");
+        }
+
+        const pk = getPrimaryKeyValue(editingRow);
+        if (!pk) {
+            throw new Error("Could not determine primary key");
+        }
+
+        const updateData: Row = {
+            fields: [{ name: fieldName, value: newValue }],
+        };
+
+        const result = await client.update({
+            database_url: databaseUrl,
+            table: selectedTable,
+            pk,
+            data: updateData,
+        });
+
+        if (!result.ok) {
+            throw new Error(formatError(result.error));
+        }
+
+        // Update the local editingRow with the new value
+        if (editingRow) {
+            editingRow = {
+                fields: editingRow.fields.map((f) =>
+                    f.name === fieldName ? { name: fieldName, value: newValue } : f
+                ),
+            };
+        }
+    }
+
+    // Navigate to a related record (opens detail view directly)
+    async function handleRelatedNavigate(tableName: string, pkValue: Value) {
+        if (!schema) return;
+
+        const table = getTableByName(schema, tableName);
+        if (!table) return;
+
+        const pkCol = table.columns.find(c => c.primary_key);
+        if (!pkCol) return;
+
+        // Add breadcrumb entry
+        const pkStr = formatPkValue(pkValue);
+        const newEntry: BreadcrumbEntry = {
+            table: tableName,
+            label: `${tableName} #${pkStr}`,
+            pkValue,
+        };
+        breadcrumbs = [...breadcrumbs, newEntry];
+
+        // Switch table and load the specific row's detail view
+        selectedTable = tableName;
+        filters = [];
+        sort = null;
+        offset = 0;
+        editingPk = pkStr;
+        isCreating = false;
+
+        // Load the row data
+        await loadRowByPk(pkStr);
+
+        // Update breadcrumb with display label
+        if (editingRow && currentTable) {
+            const label = createBreadcrumbLabel(currentTable, editingRow);
+            breadcrumbs = breadcrumbs.map((b, i) =>
+                i === breadcrumbs.length - 1 ? { ...b, label } : b
+            );
+        }
+    }
+
     async function deleteRow() {
         if (!selectedTable || !editingRow) return;
 
@@ -789,19 +951,53 @@
             Loading schema...
         </div>
     {:else if schema}
-        <div class="grid grid-cols-[200px_1fr] h-full max-h-screen">
-            <TableList tables={schema.tables} selected={selectedTable} onSelect={selectTable} />
+        <div class="max-w-6xl mx-auto h-full max-h-screen grid grid-cols-[200px_1fr]">
+            <TableList
+                tables={visibleTables}
+                selected={selectedTable}
+                onSelect={selectTable}
+                {config}
+                showDashboardButton={hasDashboard(config)}
+                onDashboard={goToDashboard}
+                dashboardActive={showDashboard}
+                {timeMode}
+                onTimeModeChange={(mode) => timeMode = mode}
+            />
 
-            {#if editingRow || isCreating}
-                <!-- Full-screen detail/create view -->
-                <RowEditor
+            {#if showDashboard && config?.dashboard}
+                <!-- Dashboard view -->
+                <Dashboard
+                    {config}
+                    {schema}
+                    {client}
+                    {databaseUrl}
+                    onSelectTable={selectTable}
+                />
+            {:else if editingRow && currentTable}
+                <!-- Detail view with inline editing -->
+                <RowDetail
                     {columns}
                     row={editingRow}
+                    table={currentTable}
+                    schema={schema}
+                    {client}
+                    {databaseUrl}
+                    tableName={selectedTable ?? ""}
+                    {config}
+                    onFieldSave={saveField}
+                    onDelete={deleteRow}
+                    onClose={closeEditor}
+                    {deleting}
+                    onNavigate={handleRelatedNavigate}
+                />
+            {:else if isCreating}
+                <!-- Create new row form -->
+                <RowEditor
+                    {columns}
+                    row={null}
                     onSave={saveRow}
-                    onDelete={editingRow ? deleteRow : undefined}
                     onClose={closeEditor}
                     {saving}
-                    {deleting}
                     table={currentTable ?? undefined}
                     schema={schema ?? undefined}
                     {client}
@@ -811,11 +1007,11 @@
                 />
             {:else}
                 <!-- Table list view -->
-                <section class="p-8 overflow-auto flex flex-col max-h-screen">
+                <section class="p-6 md:p-8 overflow-auto flex flex-col max-h-screen">
                     {#if selectedTable && currentTable}
                         <Breadcrumb entries={breadcrumbs} onNavigate={navigateToBreadcrumb} />
 
-                        <div class="flex justify-between items-center mb-8">
+                        <div class="flex justify-between items-center mb-6">
                             <h2 class="text-lg font-medium text-foreground uppercase tracking-wide flex items-center gap-2">
                                 <DynamicIcon name={currentTable.icon ?? "table"} size={20} class="opacity-70" />
                                 {selectedTable}
@@ -848,7 +1044,7 @@
                             </div>
                         {:else}
                             <DataTable
-                                {columns}
+                                columns={displayColumns}
                                 {rows}
                                 {sort}
                                 onSort={handleSort}
@@ -859,6 +1055,9 @@
                                 {databaseUrl}
                                 onFkClick={navigateToFk}
                                 {fkLookup}
+                                {timeMode}
+                                rowExpand={getRowExpand(config, selectedTable ?? "")}
+                                imageColumns={getImageColumns(config, selectedTable ?? "")}
                             />
 
                             <Pagination
