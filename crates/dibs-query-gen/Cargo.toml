@@ -1,0 +1,12 @@
+[package]
+name = "dibs-query-gen"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+styx-tree = { git = "https://github.com/bearcove/styx", branch = "main" }
+styx-parse = { git = "https://github.com/bearcove/styx", branch = "main" }
+thiserror = "2"
+
+[dev-dependencies]
+insta = "1"

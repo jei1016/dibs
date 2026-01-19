@@ -1,0 +1,52 @@
+// Queries for my-app ecommerce example.
+// These are parsed by dibs-query-gen and generate Rust code + SQL.
+
+AllProducts @query{
+  from product
+  where{ deleted_at @null }
+  order_by{ created_at desc }
+  select{ id, handle, status, active }
+}
+
+ActiveProducts @query{
+  from product
+  where{ status "published", active true, deleted_at @null }
+  order_by{ created_at desc }
+  limit 20
+  select{ id, handle, status }
+}
+
+ProductByHandle @query{
+  params{ handle @string }
+  from product
+  where{ handle $handle, deleted_at @null }
+  first true
+  select{ id, handle, status, active, created_at }
+}
+
+SearchProducts @query{
+  params{ q @string }
+  from product
+  where{ handle @ilike($q), deleted_at @null }
+  order_by{ handle asc }
+  limit 50
+  select{ id, handle, status }
+}
+
+// TODO: Relations require schema integration for FK resolution
+// ProductWithTranslation @query{
+//   params{ handle @string, locale @string }
+//   from product
+//   where{ handle $handle, deleted_at @null }
+//   first true
+//   select{
+//     id
+//     handle
+//     translation @rel{
+//       from product_translation
+//       where{ locale $locale }
+//       first true
+//       select{ title, description }
+//     }
+//   }
+// }

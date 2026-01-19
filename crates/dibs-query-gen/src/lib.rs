@@ -1,0 +1,13 @@
+//! Query DSL code generator for dibs.
+//!
+//! Parses `.styx` query files and generates Rust code + SQL.
+
+mod ast;
+mod codegen;
+mod parse;
+mod sql;
+
+pub use ast::*;
+pub use codegen::*;
+pub use parse::*;
+pub use sql::*;
