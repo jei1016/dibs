@@ -21,7 +21,7 @@ ProductByHandle @query{
   from product
   where{ handle $handle, deleted_at @null }
   first true
-  select{ id, handle, status, active, created_at }
+  select{ id, handle, status, active }
 }
 
 SearchProducts @query{

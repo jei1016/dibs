@@ -110,11 +110,10 @@ fn format_filter(
             param_idx += 1;
             s
         }
-        (FilterOp::Eq, Expr::String(_s)) => {
-            param_order.push(format!("__literal_{}", param_idx));
-            let result = format!("{} = ${}", col, param_idx);
-            param_idx += 1;
-            result
+        (FilterOp::Eq, Expr::String(s)) => {
+            // Inline string literals directly - escape single quotes
+            let escaped = s.replace('\'', "''");
+            format!("{} = '{}'", col, escaped)
         }
         (FilterOp::Eq, Expr::Int(n)) => format!("{} = {}", col, n),
         (FilterOp::Eq, Expr::Bool(b)) => format!("{} = {}", col, b),
@@ -205,8 +204,9 @@ ActiveProducts @query{
         let sql = generate_simple_sql(&file.queries[0]);
 
         assert!(sql.sql.contains("WHERE"));
-        assert!(sql.sql.contains(r#""status" = $1"#));
+        assert!(sql.sql.contains(r#""status" = 'published'"#));
         assert!(sql.sql.contains(r#""active" = true"#));
+        assert!(sql.param_order.is_empty()); // No params for literals
     }
 
     #[test]

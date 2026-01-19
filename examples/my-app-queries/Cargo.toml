@@ -10,3 +10,9 @@ dibs-runtime = { path = "../../crates/dibs-runtime" }
 [build-dependencies]
 dibs = { path = "../../crates/dibs" }
 my-app-db = { path = "../my-app-db" }
+
+[dev-dependencies]
+dockside = { path = "../../crates/dockside" }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tokio-postgres = "0.7"
+dibs = { path = "../../crates/dibs" }
