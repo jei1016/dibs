@@ -5,10 +5,8 @@ edition = "2024"
 
 [dependencies]
 my-app-db = { path = "../my-app-db" }
-sqlx = { version = "0.8", features = ["postgres", "runtime-tokio"] }
-uuid = "1"
-rust_decimal = "1"
-chrono = "0.4"
+dibs-runtime = { path = "../../crates/dibs-runtime" }
 
 [build-dependencies]
-dibs-query-gen = { path = "../../crates/dibs-query-gen" }
+dibs = { path = "../../crates/dibs" }
+my-app-db = { path = "../my-app-db" }
