@@ -1,13 +1,6 @@
 # release-plz configuration
 # https://release-plz.ieni.dev/docs/config
 
-# Packages to exclude from release management
-# dibs-cli has local dependencies that only work on the development machine
-[[package]]
-name = "dibs-cli"
-release = false
-changelog_update = false
-
 # Examples should not be released to crates.io
 [[package]]
 name = "my-app"
