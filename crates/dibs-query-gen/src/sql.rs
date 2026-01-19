@@ -101,7 +101,7 @@ pub fn generate_simple_sql(query: &Query) -> GeneratedSql {
                 sql.push_str(&format!("${}", param_idx));
                 param_idx += 1;
             }
-            _ => sql.push_str("0"), // fallback
+            _ => sql.push('0'), // fallback
         }
     }
 
@@ -209,7 +209,7 @@ pub fn generate_sql_with_joins(
                 sql.push_str(&format!("${}", param_idx));
                 param_idx += 1;
             }
-            _ => sql.push_str("0"),
+            _ => sql.push('0'),
         }
     }
 
@@ -514,7 +514,10 @@ ProductWithTranslation @query{
 
         // Check FROM with JOIN
         assert!(sql.sql.contains("FROM \"product\" AS \"t0\""));
-        assert!(sql.sql.contains("LEFT JOIN \"product_translation\" AS \"t1\""));
+        assert!(
+            sql.sql
+                .contains("LEFT JOIN \"product_translation\" AS \"t1\"")
+        );
         assert!(sql.sql.contains("ON t0.id = t1.product_id"));
 
         // Check WHERE

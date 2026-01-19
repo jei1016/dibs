@@ -120,11 +120,7 @@ impl std::fmt::Display for PlanError {
                 write!(f, "no FK relationship between {} and {}", from, to)
             }
             PlanError::RelationNeedsFrom { relation } => {
-                write!(
-                    f,
-                    "relation '{}' requires explicit 'from' clause",
-                    relation
-                )
+                write!(f, "relation '{}' requires explicit 'from' clause", relation)
             }
         }
     }
@@ -174,9 +170,10 @@ impl<'a> QueryPlanner<'a> {
                     ..
                 } => {
                     // Resolve the relation
-                    let relation_table = from.as_ref().ok_or_else(|| PlanError::RelationNeedsFrom {
-                        relation: name.clone(),
-                    })?;
+                    let relation_table =
+                        from.as_ref().ok_or_else(|| PlanError::RelationNeedsFrom {
+                            relation: name.clone(),
+                        })?;
 
                     // Find FK relationship
                     let (join_clause, fk_direction) =
@@ -184,12 +181,8 @@ impl<'a> QueryPlanner<'a> {
                     let relation_alias = join_clause.alias.clone();
                     alias_counter += 1;
 
-                    // Determine join type based on relation cardinality
-                    let join_type = if *first {
-                        JoinType::Left // Option<T> - may not exist
-                    } else {
-                        JoinType::Left // Vec<T> - also LEFT to preserve parent rows
-                    };
+                    // Use LEFT JOIN for both Option<T> and Vec<T> to preserve parent rows
+                    let join_type = JoinType::Left;
 
                     joins.push(JoinClause {
                         join_type,
@@ -199,10 +192,7 @@ impl<'a> QueryPlanner<'a> {
                     // Add columns from the relation
                     let mut relation_columns = HashMap::new();
                     for rel_field in select {
-                        if let Field::Column {
-                            name: col_name, ..
-                        } = rel_field
-                        {
+                        if let Field::Column { name: col_name, .. } = rel_field {
                             let result_alias = format!("{}_{}", name, col_name);
                             select_columns.push(SelectColumn {
                                 table_alias: relation_alias.clone(),
@@ -251,13 +241,13 @@ impl<'a> QueryPlanner<'a> {
         to_table: &str,
         alias_counter: usize,
     ) -> Result<(JoinClause, FkDirection), PlanError> {
-        let to_table_info = self
-            .schema
-            .tables
-            .get(to_table)
-            .ok_or_else(|| PlanError::TableNotFound {
-                table: to_table.to_string(),
-            })?;
+        let to_table_info =
+            self.schema
+                .tables
+                .get(to_table)
+                .ok_or_else(|| PlanError::TableNotFound {
+                    table: to_table.to_string(),
+                })?;
 
         // Check if to_table has FK pointing to from_table (reverse/has-many)
         for fk in &to_table_info.foreign_keys {
@@ -281,11 +271,13 @@ impl<'a> QueryPlanner<'a> {
         }
 
         // Check if from_table has FK pointing to to_table (forward/belongs-to)
-        let from_table_info = self.schema.tables.get(from_table).ok_or_else(|| {
-            PlanError::TableNotFound {
-                table: from_table.to_string(),
-            }
-        })?;
+        let from_table_info =
+            self.schema
+                .tables
+                .get(from_table)
+                .ok_or_else(|| PlanError::TableNotFound {
+                    table: from_table.to_string(),
+                })?;
 
         for fk in &from_table_info.foreign_keys {
             if fk.references_table == to_table {
@@ -369,11 +361,7 @@ mod tests {
             "product".to_string(),
             PlannerTable {
                 name: "product".to_string(),
-                columns: vec![
-                    "id".to_string(),
-                    "handle".to_string(),
-                    "status".to_string(),
-                ],
+                columns: vec!["id".to_string(), "handle".to_string(), "status".to_string()],
                 foreign_keys: vec![],
             },
         );

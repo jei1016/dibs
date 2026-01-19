@@ -200,7 +200,12 @@ fn generate_result_struct(
     }
 }
 
-fn generate_query_function(ctx: &CodegenContext, query: &Query, struct_name: &str, code: &mut String) {
+fn generate_query_function(
+    ctx: &CodegenContext,
+    query: &Query,
+    struct_name: &str,
+    code: &mut String,
+) {
     let fn_name = to_snake_case(&query.name);
 
     // Function signature
@@ -265,10 +270,7 @@ fn generate_join_query_body(
         Ok(g) => g,
         Err(e) => {
             // Fall back to simple SQL on planning error
-            code.push_str(&format!(
-                "    // Warning: JOIN planning failed: {}\n",
-                e
-            ));
+            code.push_str(&format!("    // Warning: JOIN planning failed: {}\n", e));
             generate_simple_query_body(query, code);
             return;
         }
@@ -334,10 +336,7 @@ fn generate_join_query_body(
 
             // Extract each column from the relation
             for f in select {
-                if let Field::Column {
-                    name: col_name, ..
-                } = f
-                {
+                if let Field::Column { name: col_name, .. } = f {
                     let rust_ty = ctx
                         .schema
                         .column_type(rel_table, col_name)
@@ -372,16 +371,13 @@ fn generate_join_query_body(
                     .unwrap_or_default();
                 let first_alias = format!("{}_{}", name, first_col);
 
+                // Use .map() to avoid clippy::manual_map warning
                 code.push_str(&format!(
-                    "        let {} = if {}.is_some() {{\n",
-                    name, first_alias
+                    "        let {} = {}.map(|{}_val| {} {{\n",
+                    name, first_alias, first_alias, nested_name
                 ));
-                code.push_str(&format!("            Some({} {{\n", nested_name));
                 for f in select {
-                    if let Field::Column {
-                        name: col_name, ..
-                    } = f
-                    {
+                    if let Field::Column { name: col_name, .. } = f {
                         let alias = format!("{}_{}", name, col_name);
                         // Check if the column is already nullable - if so, don't unwrap
                         let rust_ty = ctx
@@ -390,19 +386,16 @@ fn generate_join_query_body(
                             .unwrap_or_else(|| "String".to_string());
                         let value_expr = if rust_ty.starts_with("Option<") {
                             alias.clone() // Already Option, pass directly
+                        } else if alias == first_alias {
+                            // Use the captured value from map closure
+                            format!("{}_val", first_alias)
                         } else {
                             format!("{}.unwrap()", alias) // Unwrap the JOIN's Option wrapper
                         };
-                        code.push_str(&format!(
-                            "                {}: {},\n",
-                            col_name, value_expr
-                        ));
+                        code.push_str(&format!("            {}: {},\n", col_name, value_expr));
                     }
                 }
-                code.push_str("            })\n");
-                code.push_str("        } else {\n");
-                code.push_str("            None\n");
-                code.push_str("        };\n");
+                code.push_str("        });\n");
             } else {
                 // For first=false (Vec), this is more complex - need to group by parent ID
                 // For now, just create a single-element vec if present
@@ -418,16 +411,14 @@ fn generate_join_query_body(
                     .unwrap_or_default();
                 let first_alias = format!("{}_{}", name, first_col);
 
+                // Use if let Some() pattern to avoid unnecessary_unwrap clippy warning
                 code.push_str(&format!(
-                    "        let {} = if {}.is_some() {{\n",
-                    name, first_alias
+                    "        let {} = if let Some({}_val) = {} {{\n",
+                    name, first_alias, first_alias
                 ));
                 code.push_str(&format!("            vec![{} {{\n", nested_name));
                 for f in select {
-                    if let Field::Column {
-                        name: col_name, ..
-                    } = f
-                    {
+                    if let Field::Column { name: col_name, .. } = f {
                         let alias = format!("{}_{}", name, col_name);
                         // Check if the column is already nullable - if so, don't unwrap
                         let rust_ty = ctx
@@ -436,13 +427,13 @@ fn generate_join_query_body(
                             .unwrap_or_else(|| "String".to_string());
                         let value_expr = if rust_ty.starts_with("Option<") {
                             alias.clone() // Already Option, pass directly
+                        } else if alias == first_alias {
+                            // Use the captured value from if let
+                            format!("{}_val", first_alias)
                         } else {
                             format!("{}.unwrap()", alias) // Unwrap the JOIN's Option wrapper
                         };
-                        code.push_str(&format!(
-                            "                {}: {},\n",
-                            col_name, value_expr
-                        ));
+                        code.push_str(&format!("                {}: {},\n", col_name, value_expr));
                     }
                 }
                 code.push_str("            }]\n");
@@ -807,7 +798,10 @@ ProductWithTranslation @query{
         let code = generate_rust_code_with_planner(&file, &schema, Some(&planner_schema));
 
         // Check struct generation
-        assert!(code.code.contains("pub struct ProductWithTranslationResult"));
+        assert!(
+            code.code
+                .contains("pub struct ProductWithTranslationResult")
+        );
         assert!(code.code.contains("pub id: i64"));
         assert!(code.code.contains("pub handle: String"));
         assert!(code.code.contains("pub translation: Option<Translation>"));
@@ -820,7 +814,10 @@ ProductWithTranslation @query{
         // Check assembly code generation
         assert!(code.code.contains("translation_title"));
         assert!(code.code.contains("translation_description"));
-        assert!(code.code.contains("if translation_title.is_some()"));
-        assert!(code.code.contains("Some(Translation"));
+        assert!(
+            code.code
+                .contains(".map(|translation_title_val| Translation")
+        );
+        assert!(code.code.contains("title: translation_title_val"));
     }
 }
