@@ -168,10 +168,17 @@
             };
         }
 
+        // For LIKE/ILIKE, wrap value with % for "contains" behavior
+        // unless user already included wildcards
+        let finalValue = value;
+        if ((filterOpTag === "Like" || filterOpTag === "ILike") && !value.includes("%")) {
+            finalValue = `%${value}%`;
+        }
+
         return {
             field: colName,
             op: filterOp,
-            value: stringToValue(value, col.sql_type),
+            value: stringToValue(finalValue, col.sql_type),
             values: [],
         };
     }
@@ -258,6 +265,7 @@
         if (newFilters.length > 0) {
             onFiltersChange([...filters, ...newFilters]);
             inputValue = "";
+            showSuggestions = false;
         }
     }
 
