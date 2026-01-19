@@ -265,171 +265,175 @@
     }
 </script>
 
-<Dialog open={true} {onClose} title={row ? "Edit Row" : "Create Row"}>
-    <div class="space-y-4">
-        {#each columns as col}
-            {@const isAuto = col.auto_generated}
-            {@const isPK = isPrimaryKey(col)}
-            {@const hideOnCreate = !row && isAuto}
-            {@const disabled = isAuto || (row !== null && isPK)}
-            {@const controlType = getControlType(col)}
-            {@const fkInfo = getFkInfo(col)}
+<Dialog.Root open={true} onOpenChange={(open) => !open && onClose()}>
+    <Dialog.Content>
+        <Dialog.Header>
+            <Dialog.Title>{row ? "Edit Row" : "Create Row"}</Dialog.Title>
+        </Dialog.Header>
 
-            {#if hideOnCreate}
-                <!-- Skip auto-generated fields when creating -->
-            {:else}
+        <div class="space-y-4">
+            {#each columns as col}
+                {@const isAuto = col.auto_generated}
+                {@const isPK = isPrimaryKey(col)}
+                {@const hideOnCreate = !row && isAuto}
+                {@const disabled = isAuto || (row !== null && isPK)}
+                {@const controlType = getControlType(col)}
+                {@const fkInfo = getFkInfo(col)}
 
-            {@const required = !row && isRequired(col)}
-            {@const dirty = row && isDirty(col.name)}
-            {@const hasError = validationErrors.has(col.name)}
+                {#if hideOnCreate}
+                    <!-- Skip auto-generated fields when creating -->
+                {:else}
 
-            <div class="space-y-1.5">
-                <div>
-                    <div class="flex items-center gap-2">
-                        <Label for={col.name}>{col.name}</Label>
-                        {#if required}
-                            <Asterisk size={10} class="text-red-400" weight="bold" />
-                        {/if}
-                        {#if dirty}
-                            <span class="text-[10px] text-amber-400">modified</span>
-                        {/if}
-                        <span class="text-[10px] text-neutral-600">{col.sql_type}</span>
-                        {#if isPK}
-                            <span class="text-[10px] text-neutral-500">pk</span>
-                        {/if}
-                    </div>
-                    {#if col.doc}
-                        <p class="text-xs text-neutral-500">{col.doc}</p>
-                    {/if}
-                    {#if hasError}
-                        <p class="text-xs text-red-400">{validationErrors.get(col.name)}</p>
-                    {/if}
-                </div>
+                {@const required = !row && isRequired(col)}
+                {@const dirty = row && isDirty(col.name)}
+                {@const hasError = validationErrors.has(col.name)}
 
-                {#if controlType === "checkbox"}
-                    <div class="flex items-center gap-3 h-9">
-                        <Checkbox
-                            id={col.name}
-                            checked={getBooleanValue(col.name)}
-                            onCheckedChange={(checked) => setBooleanValue(col.name, checked === true)}
-                            {disabled}
-                        />
-                        <span class="text-sm text-neutral-500">
-                            {getBooleanValue(col.name) ? "true" : "false"}
-                        </span>
-                    </div>
-                {:else if controlType === "number"}
-                    {#if fkInfo && client && databaseUrl && !disabled}
+                <div class="space-y-1.5">
+                    <div>
                         <div class="flex items-center gap-2">
-                            <div class="flex-1">
-                                <FkSelect
-                                    value={getFormValue(col.name)}
-                                    fkTable={fkInfo.fkTable}
-                                    {client}
-                                    {databaseUrl}
-                                    {disabled}
-                                    onchange={(v) => setFormValue(col.name, v)}
-                                />
-                            </div>
-                            <span class="text-xs text-neutral-500 flex items-center gap-1">
-                                <ArrowSquareOut size={12} />
-                                {fkInfo.fkTable.name}
+                            <Label for={col.name}>{col.name}</Label>
+                            {#if required}
+                                <Asterisk size={10} class="text-destructive" weight="bold" />
+                            {/if}
+                            {#if dirty}
+                                <span class="text-[10px] text-chart-4">modified</span>
+                            {/if}
+                            <span class="text-[10px] text-muted-foreground/60">{col.sql_type}</span>
+                            {#if isPK}
+                                <span class="text-[10px] text-muted-foreground">pk</span>
+                            {/if}
+                        </div>
+                        {#if col.doc}
+                            <p class="text-xs text-muted-foreground">{col.doc}</p>
+                        {/if}
+                        {#if hasError}
+                            <p class="text-xs text-destructive">{validationErrors.get(col.name)}</p>
+                        {/if}
+                    </div>
+
+                    {#if controlType === "checkbox"}
+                        <div class="flex items-center gap-3 h-9">
+                            <Checkbox
+                                id={col.name}
+                                checked={getBooleanValue(col.name)}
+                                onCheckedChange={(checked) => setBooleanValue(col.name, checked === true)}
+                                {disabled}
+                            />
+                            <span class="text-sm text-muted-foreground">
+                                {getBooleanValue(col.name) ? "true" : "false"}
                             </span>
                         </div>
-                    {:else}
-                        <NumberInput
+                    {:else if controlType === "number"}
+                        {#if fkInfo && client && databaseUrl && !disabled}
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1">
+                                    <FkSelect
+                                        value={getFormValue(col.name)}
+                                        fkTable={fkInfo.fkTable}
+                                        {client}
+                                        {databaseUrl}
+                                        {disabled}
+                                        onchange={(v) => setFormValue(col.name, v)}
+                                    />
+                                </div>
+                                <span class="text-xs text-muted-foreground flex items-center gap-1">
+                                    <ArrowSquareOut size={12} />
+                                    {fkInfo.fkTable.name}
+                                </span>
+                            </div>
+                        {:else}
+                            <NumberInput
+                                id={col.name}
+                                value={getFormValue(col.name)}
+                                oninput={(e) => setFormValue(col.name, e.currentTarget.value)}
+                                placeholder={col.nullable ? "null" : ""}
+                                {disabled}
+                            />
+                        {/if}
+                    {:else if controlType === "datetime"}
+                        <DatetimeInput
                             id={col.name}
+                            value={getFormValue(col.name)}
+                            onchange={(v: string) => setFormValue(col.name, v)}
+                            {disabled}
+                        />
+                    {:else if controlType === "textarea"}
+                        <Textarea
+                            id={col.name}
+                            value={getFormValue(col.name)}
+                            oninput={(e) => setFormValue(col.name, e.currentTarget.value)}
+                            placeholder={col.nullable ? "null" : ""}
+                            disabled={disabled || false}
+                            rows={3}
+                        />
+                    {:else if controlType === "enum"}
+                        <Select.Root type="single" value={getFormValue(col.name)} {disabled} onValueChange={(v: string) => setFormValue(col.name, v)}>
+                            <Select.Trigger class="w-full">
+                                {getFormValue(col.name) || "-- None --"}
+                            </Select.Trigger>
+                            <Select.Content>
+                                {#if col.nullable}
+                                    <Select.Item value="">-- None --</Select.Item>
+                                {/if}
+                                {#each col.enum_variants as variant}
+                                    <Select.Item value={variant}>{variant}</Select.Item>
+                                {/each}
+                            </Select.Content>
+                        </Select.Root>
+                    {:else}
+                        <Input
+                            id={col.name}
+                            type="text"
                             value={getFormValue(col.name)}
                             oninput={(e) => setFormValue(col.name, e.currentTarget.value)}
                             placeholder={col.nullable ? "null" : ""}
                             {disabled}
                         />
                     {/if}
-                {:else if controlType === "datetime"}
-                    <DatetimeInput
-                        id={col.name}
-                        value={getFormValue(col.name)}
-                        onchange={(v: string) => setFormValue(col.name, v)}
-                        {disabled}
-                    />
-                {:else if controlType === "textarea"}
-                    <Textarea
-                        id={col.name}
-                        value={getFormValue(col.name)}
-                        oninput={(e) => setFormValue(col.name, e.currentTarget.value)}
-                        placeholder={col.nullable ? "null" : ""}
-                        disabled={disabled || false}
-                        rows={3}
-                    />
-                {:else if controlType === "enum"}
-                    <Select
-                        value={getFormValue(col.name)}
-                        {disabled}
-                        onchange={() => {
-                            const el = document.getElementById(col.name) as HTMLSelectElement;
-                            if (el) setFormValue(col.name, el.value);
-                        }}
-                    >
-                        {#if col.nullable}
-                            <option value="">-- None --</option>
-                        {/if}
-                        {#each col.enum_variants as variant}
-                            <option value={variant}>{variant}</option>
-                        {/each}
-                    </Select>
-                {:else}
-                    <Input
-                        id={col.name}
-                        type="text"
-                        value={getFormValue(col.name)}
-                        oninput={(e) => setFormValue(col.name, e.currentTarget.value)}
-                        placeholder={col.nullable ? "null" : ""}
-                        {disabled}
-                    />
+                </div>
                 {/if}
-            </div>
-            {/if}
-        {/each}
-    </div>
-
-    {#snippet footer()}
-        {#if row && onDelete}
-            <div class="mr-auto">
-                <Button variant="destructive" onclick={handleDelete} disabled={deleting}>
-                    <Trash size={16} />
-                    {deleting ? "Deleting..." : "Delete"}
-                </Button>
-            </div>
-        {/if}
-
-        <!-- Status indicator -->
-        <div class="flex-1 text-xs text-neutral-500">
-            {#if row}
-                {#if dirtyCount > 0}
-                    {dirtyCount} field{dirtyCount === 1 ? "" : "s"} modified
-                {:else}
-                    No changes
-                {/if}
-            {:else}
-                {#if missingRequired.length > 0}
-                    <span class="text-red-400">
-                        {missingRequired.length} required field{missingRequired.length === 1 ? "" : "s"} missing
-                    </span>
-                {:else}
-                    Ready to create
-                {/if}
-            {/if}
+            {/each}
         </div>
 
-        <Button variant="outline" onclick={onClose} disabled={saving || deleting}>Cancel</Button>
-        <Button onclick={handleSave} disabled={saving || deleting || (row !== null && dirtyCount === 0)}>
-            {#if saving}
-                Saving...
-            {:else if row}
-                Update{dirtyCount > 0 ? ` (${dirtyCount})` : ""}
-            {:else}
-                Create
+        <Dialog.Footer>
+            {#if row && onDelete}
+                <div class="mr-auto">
+                    <Button variant="destructive" onclick={handleDelete} disabled={deleting}>
+                        <Trash size={16} />
+                        {deleting ? "Deleting..." : "Delete"}
+                    </Button>
+                </div>
             {/if}
-        </Button>
-    {/snippet}
-</Dialog>
+
+            <!-- Status indicator -->
+            <div class="flex-1 text-xs text-muted-foreground">
+                {#if row}
+                    {#if dirtyCount > 0}
+                        {dirtyCount} field{dirtyCount === 1 ? "" : "s"} modified
+                    {:else}
+                        No changes
+                    {/if}
+                {:else}
+                    {#if missingRequired.length > 0}
+                        <span class="text-destructive">
+                            {missingRequired.length} required field{missingRequired.length === 1 ? "" : "s"} missing
+                        </span>
+                    {:else}
+                        Ready to create
+                    {/if}
+                {/if}
+            </div>
+
+            <Button variant="outline" onclick={onClose} disabled={saving || deleting}>Cancel</Button>
+            <Button onclick={handleSave} disabled={saving || deleting || (row !== null && dirtyCount === 0)}>
+                {#if saving}
+                    Saving...
+                {:else if row}
+                    Update{dirtyCount > 0 ? ` (${dirtyCount})` : ""}
+                {:else}
+                    Create
+                {/if}
+            </Button>
+        </Dialog.Footer>
+    </Dialog.Content>
+</Dialog.Root>

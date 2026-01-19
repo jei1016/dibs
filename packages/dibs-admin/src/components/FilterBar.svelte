@@ -1,9 +1,7 @@
 <script lang="ts">
     import { Plus, X } from "phosphor-svelte";
     import type { ColumnInfo, Filter, FilterOp, Value } from "../types.js";
-    import { Button } from "../lib/components/ui/index.js";
-    import { Input } from "../lib/components/ui/index.js";
-    import { Select } from "../lib/components/ui/index.js";
+    import { Button, Input, Select, Badge } from "../lib/components/ui/index.js";
 
     interface Props {
         columns: ColumnInfo[];
@@ -52,7 +50,6 @@
         "Gte",
         "Like",
         "ILike",
-        // Note: "In" needs special handling with multiple values, not yet implemented in UI
     ]);
 
     function getColumnType(colName: string): string {
@@ -140,35 +137,43 @@
 {#if filters.length > 0}
     <div class="flex flex-wrap items-center gap-3 mb-6">
         {#each filters as filter, i}
-            <span
-                class="inline-flex items-center gap-2 bg-neutral-900 text-neutral-300 px-3 py-1.5 text-sm"
-            >
+            <Badge variant="secondary" class="gap-2 py-1.5">
                 {formatFilterDisplay(filter)}
                 <button
-                    class="text-neutral-500 hover:text-white transition-colors"
+                    class="text-muted-foreground hover:text-foreground transition-colors"
                     onclick={() => onRemoveFilter(i)}
                     aria-label="Remove filter"
                 >
                     <X size={14} />
                 </button>
-            </span>
+            </Badge>
         {/each}
         <Button variant="ghost" size="sm" onclick={onClearFilters}>Clear</Button>
     </div>
 {/if}
 
 <div class="flex flex-wrap items-center gap-3 mb-6">
-    <Select bind:value={selectedField} class="w-auto">
-        {#each columns as col}
-            <option value={col.name}>{col.name}</option>
-        {/each}
-    </Select>
+    <Select.Root type="single" bind:value={selectedField}>
+        <Select.Trigger class="w-[180px]">
+            {selectedField || "Select column..."}
+        </Select.Trigger>
+        <Select.Content>
+            {#each columns as col}
+                <Select.Item value={col.name}>{col.name}</Select.Item>
+            {/each}
+        </Select.Content>
+    </Select.Root>
 
-    <Select bind:value={selectedOp} class="w-auto">
-        {#each Object.entries(opLabels) as [op, label]}
-            <option value={op}>{label}</option>
-        {/each}
-    </Select>
+    <Select.Root type="single" bind:value={selectedOp}>
+        <Select.Trigger class="w-[120px]">
+            {opLabels[selectedOp]}
+        </Select.Trigger>
+        <Select.Content>
+            {#each Object.entries(opLabels) as [op, label]}
+                <Select.Item value={op}>{label}</Select.Item>
+            {/each}
+        </Select.Content>
+    </Select.Root>
 
     {#if needsValue.has(selectedOp)}
         <Input

@@ -151,7 +151,7 @@
     {#if columns.some(isTimestampColumn)}
         <div class="flex justify-end mb-3">
             <button
-                class="inline-flex items-center gap-2 text-xs text-neutral-500 hover:text-white transition-colors"
+                class="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 onclick={() => timeMode = timeMode === "relative" ? "absolute" : "relative"}
             >
                 <Clock size={14} />
@@ -165,7 +165,7 @@
                 {#each columns as col}
                     {@const sortDir = getSortDir(col.name)}
                     <th
-                        class="px-4 py-3 text-left text-neutral-500 font-medium sticky top-0 cursor-pointer select-none whitespace-nowrap bg-neutral-950 hover:text-white transition-colors"
+                        class="px-4 py-3 text-left text-muted-foreground font-medium sticky top-0 cursor-pointer select-none whitespace-nowrap bg-background hover:text-foreground transition-colors"
                         onclick={() => handleHeaderClick(col.name)}
                     >
                         <span class="inline-flex items-center gap-2">
@@ -189,8 +189,8 @@
             {#each rows as row}
                 {@const clickable = onRowClick !== undefined}
                 <tr
-                    class="border-t border-neutral-900 transition-colors {clickable
-                        ? 'cursor-pointer hover:bg-neutral-900'
+                    class="border-t border-border transition-all duration-150 {clickable
+                        ? 'cursor-pointer hover:bg-accent/50 hover:border-l-2 hover:border-l-primary'
                         : ''}"
                     onclick={() => handleRowClick(row)}
                 >
@@ -201,11 +201,11 @@
                         {@const rawValue = getRawValue(row, col)}
                         <td
                             class="px-4 py-3 text-sm max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap"
-                            class:text-neutral-600={cell.isNull}
+                            class:text-muted-foreground={cell.isNull}
                         >
                             <span class="inline-flex items-center gap-1.5">
                                 {#if TypeIcon}
-                                    <TypeIcon size={12} class="text-neutral-600 flex-shrink-0" />
+                                    <TypeIcon size={12} class="text-muted-foreground/60 flex-shrink-0" />
                                 {/if}
                                 {#if fkInfo && client && databaseUrl && rawValue.tag !== "Null"}
                                     {@const cachedRow = getCachedFkRow(fkInfo.fkTable.name, rawValue)}

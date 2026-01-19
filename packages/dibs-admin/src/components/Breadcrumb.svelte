@@ -11,20 +11,20 @@
 </script>
 
 {#if entries.length > 1}
-    <nav class="flex items-center gap-1 text-sm mb-4 text-neutral-500">
+    <nav class="flex items-center gap-1 text-sm mb-4 text-muted-foreground">
         {#each entries as entry, i}
             {#if i > 0}
-                <CaretRight size={12} class="text-neutral-700" />
+                <CaretRight size={12} class="text-muted-foreground/40" />
             {/if}
             {#if i < entries.length - 1}
                 <button
-                    class="hover:text-white transition-colors"
+                    class="hover:text-foreground transition-colors"
                     onclick={() => onNavigate(i)}
                 >
                     {entry.label}
                 </button>
             {:else}
-                <span class="text-white">{entry.label}</span>
+                <span class="text-foreground">{entry.label}</span>
             {/if}
         {/each}
     </nav>

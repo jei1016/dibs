@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { cn } from "../../utils.js";
+    import { cn } from "$lib/utils.js";
 
     interface Props {
         value?: string;
@@ -52,7 +52,7 @@
     {disabled}
     step="1"
     class={cn(
-        "flex h-9 w-full bg-neutral-900 px-3 py-1 text-sm text-white focus-visible:outline-none focus-visible:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40 [color-scheme:dark]",
+        "flex h-9 w-full bg-input px-3 py-1 text-sm text-foreground focus-visible:outline-none focus-visible:bg-accent disabled:cursor-not-allowed disabled:opacity-40",
         className,
     )}
 />

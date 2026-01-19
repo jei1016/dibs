@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Row, TableInfo, Value, SquelClient, ListRequest } from "../types.js";
+    import type { TableInfo, SquelClient, ListRequest } from "../types.js";
     import { getDisplayColumn, getPkValue, formatValueForDisplay } from "../lib/fk-utils.js";
     import { Select } from "../lib/components/ui/index.js";
 
@@ -12,7 +12,7 @@
         onchange: (value: string) => void;
     }
 
-    let { value, fkTable, client, databaseUrl, disabled = false, onchange }: Props = $props();
+    let { value = $bindable(), fkTable, client, databaseUrl, disabled = false, onchange }: Props = $props();
 
     let options = $state<{ value: string; label: string }[]>([]);
     let loading = $state(true);
@@ -78,16 +78,25 @@
 </script>
 
 {#if loading}
-    <div class="h-9 flex items-center px-3 bg-neutral-900 text-neutral-500 text-sm">
+    <div class="h-9 flex items-center px-3 bg-muted text-muted-foreground text-sm">
         Loading options...
     </div>
 {:else if error}
-    <div class="text-red-400 text-sm">{error}</div>
+    <div class="text-destructive text-sm">{error}</div>
 {:else}
-    <Select bind:value {disabled} onchange={() => onchange(value)}>
-        <option value="">-- Select {fkTable.name} --</option>
-        {#each options as opt}
-            <option value={opt.value}>{opt.label}</option>
-        {/each}
-    </Select>
+    <Select.Root type="single" bind:value={value} {disabled} onValueChange={(v: string) => { value = v; onchange(v); }}>
+        <Select.Trigger class="w-full">
+            {#if value}
+                {options.find(o => o.value === value)?.label ?? value}
+            {:else}
+                -- Select {fkTable.name} --
+            {/if}
+        </Select.Trigger>
+        <Select.Content>
+            <Select.Item value="">-- Select {fkTable.name} --</Select.Item>
+            {#each options as opt}
+                <Select.Item value={opt.value}>{opt.label}</Select.Item>
+            {/each}
+        </Select.Content>
+    </Select.Root>
 {/if}

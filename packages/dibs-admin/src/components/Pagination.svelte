@@ -24,7 +24,7 @@
         <CaretLeft size={14} />
         Prev
     </Button>
-    <span class="text-neutral-500 text-sm">
+    <span class="text-muted-foreground text-sm">
         {start}–{end}
         {#if total !== null}
             / {total.toString()}

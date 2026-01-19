@@ -641,9 +641,9 @@
     }
 </script>
 
-<div class="h-full bg-neutral-950 text-neutral-100">
+<div class="h-full bg-background text-foreground">
     {#if loading && !schema}
-        <div class="flex items-center justify-center h-full p-8 text-neutral-500">
+        <div class="flex items-center justify-center h-full p-8 text-muted-foreground">
             Loading schema...
         </div>
     {:else if schema}
@@ -655,7 +655,7 @@
                     <Breadcrumb entries={breadcrumbs} onNavigate={navigateToBreadcrumb} />
 
                     <div class="flex justify-between items-center mb-8">
-                        <h2 class="text-lg font-medium text-white uppercase tracking-wide">{selectedTable}</h2>
+                        <h2 class="text-lg font-medium text-foreground uppercase tracking-wide">{selectedTable}</h2>
                         <Button onclick={openCreateDialog}>
                             <Plus size={16} />
                             New
@@ -663,7 +663,7 @@
                     </div>
 
                     {#if error}
-                        <p class="text-red-400 mb-6 text-sm">
+                        <p class="text-destructive mb-6 text-sm">
                             {error}
                         </p>
                     {/if}
@@ -677,11 +677,11 @@
                     />
 
                     {#if loading}
-                        <div class="flex-1 flex items-center justify-center text-neutral-500">
+                        <div class="flex-1 flex items-center justify-center text-muted-foreground">
                             Loading...
                         </div>
                     {:else if rows.length === 0}
-                        <div class="flex-1 flex items-center justify-center text-neutral-600">
+                        <div class="flex-1 flex items-center justify-center text-muted-foreground/60">
                             No rows found.
                         </div>
                     {:else}
@@ -709,14 +709,14 @@
                         />
                     {/if}
                 {:else}
-                    <div class="flex-1 flex items-center justify-center text-neutral-600">
+                    <div class="flex-1 flex items-center justify-center text-muted-foreground/60">
                         Select a table
                     </div>
                 {/if}
             </section>
         </div>
     {:else if error}
-        <p class="text-red-400 p-8 text-sm">
+        <p class="text-destructive p-8 text-sm">
             {error}
         </p>
     {/if}

@@ -97,7 +97,7 @@
 </script>
 
 <button
-    class="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 hover:underline transition-colors cursor-pointer"
+    class="inline-flex items-center gap-1 text-primary hover:text-primary/80 hover:underline transition-colors cursor-pointer"
     onclick={handleClick}
     onmouseenter={handleMouseEnter}
     onmouseleave={handleMouseLeave}
