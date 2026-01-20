@@ -40,6 +40,12 @@ pub struct Query {
     /// Order by clause.
     pub order_by: Option<OrderBy>,
 
+    /// Limit clause (number or param reference like $limit).
+    pub limit: Option<String>,
+
+    /// Offset clause (number or param reference like $offset).
+    pub offset: Option<String>,
+
     /// Fields to select.
     pub select: Select,
 }
@@ -273,6 +279,24 @@ ProductsSorted @query{
         assert_eq!(order_by.columns.len(), 2);
         assert_eq!(order_by.columns.get("created_at"), Some(&Some("desc".to_string())));
         assert_eq!(order_by.columns.get("name"), Some(&None)); // no direction = asc
+    }
+
+    #[test]
+    fn test_parse_query_with_limit_offset() {
+        let source = r#"
+PagedProducts @query{
+    params{ page @int }
+    from product
+    limit 10
+    offset $page
+    select{ id }
+}
+"#;
+        let file: QueryFile = parse(source);
+        let Decl::Query(q) = file.decls.get("PagedProducts").unwrap();
+
+        assert_eq!(q.limit, Some("10".to_string()));
+        assert_eq!(q.offset, Some("$page".to_string()));
     }
 
     #[test]
