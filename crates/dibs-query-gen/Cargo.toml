@@ -7,6 +7,13 @@ edition = "2024"
 styx-tree = { git = "https://github.com/bearcove/styx", branch = "main" }
 styx-parse = { git = "https://github.com/bearcove/styx", branch = "main" }
 thiserror = "2"
+codegen = "0.2"
 
 [dev-dependencies]
 insta = "1"
+tracing = "0.1"
+facet-testhelpers = { path = "/Users/amos/bearcove/facet/facet-testhelpers" }
+dockside = { path = "../dockside" }
+dibs-runtime = { path = "../dibs-runtime" }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tokio-postgres = "0.7"

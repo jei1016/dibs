@@ -46,6 +46,8 @@ pub struct QueryPlan {
     pub joins: Vec<JoinClause>,
     /// Column selections with their aliases
     pub select_columns: Vec<SelectColumn>,
+    /// COUNT subqueries
+    pub count_subqueries: Vec<CountSubquery>,
     /// Mapping from result columns to nested struct paths
     pub result_mapping: ResultMapping,
 }
@@ -81,6 +83,21 @@ pub struct SelectColumn {
     pub result_alias: String,
 }
 
+/// A COUNT subquery in the SELECT clause.
+#[derive(Debug, Clone)]
+pub struct CountSubquery {
+    /// Result alias (e.g., "variant_count")
+    pub result_alias: String,
+    /// Table to count from (e.g., "product_variant")
+    pub count_table: String,
+    /// FK column in the count table (e.g., "product_id")
+    pub fk_column: String,
+    /// Parent table alias (e.g., "t0")
+    pub parent_alias: String,
+    /// Parent key column (e.g., "id")
+    pub parent_key: String,
+}
+
 /// Mapping of result columns to nested struct paths.
 #[derive(Debug, Clone, Default)]
 pub struct ResultMapping {
@@ -99,6 +116,8 @@ pub struct RelationMapping {
     pub first: bool,
     /// Column mappings within this relation
     pub columns: HashMap<String, String>,
+    /// Parent's primary key column name (used for grouping Vec relations)
+    pub parent_key_column: Option<String>,
 }
 
 /// Error type for query planning.
@@ -145,6 +164,7 @@ impl<'a> QueryPlanner<'a> {
 
         let mut joins = Vec::new();
         let mut select_columns = Vec::new();
+        let mut count_subqueries = Vec::new();
         let mut result_mapping = ResultMapping::default();
         let mut alias_counter = 1;
 
@@ -176,9 +196,9 @@ impl<'a> QueryPlanner<'a> {
                         })?;
 
                     // Find FK relationship
-                    let (join_clause, fk_direction) =
+                    let fk_resolution =
                         self.resolve_fk(from_table, relation_table, alias_counter)?;
-                    let relation_alias = join_clause.alias.clone();
+                    let relation_alias = fk_resolution.join_clause.alias.clone();
                     alias_counter += 1;
 
                     // Use LEFT JOIN for both Option<T> and Vec<T> to preserve parent rows
@@ -186,7 +206,7 @@ impl<'a> QueryPlanner<'a> {
 
                     joins.push(JoinClause {
                         join_type,
-                        ..join_clause
+                        ..fk_resolution.join_clause
                     });
 
                     // Add columns from the relation
@@ -206,20 +226,49 @@ impl<'a> QueryPlanner<'a> {
                         }
                     }
 
+                    // For Vec relations (first=false), store parent key for grouping
+                    let parent_key_column = if *first {
+                        None
+                    } else {
+                        Some(fk_resolution.parent_key_column)
+                    };
+
                     result_mapping.relations.insert(
                         name.clone(),
                         RelationMapping {
                             name: name.clone(),
                             first: *first,
                             columns: relation_columns,
+                            parent_key_column,
                         },
                     );
-
-                    // Suppress unused variable warning
-                    let _ = fk_direction;
                 }
-                Field::Count { .. } => {
-                    // TODO: Handle COUNT aggregates
+                Field::Count { name, table, .. } => {
+                    // Resolve FK from count_table to base table
+                    if let Ok(fk_resolution) = self.resolve_fk(from_table, table, alias_counter) {
+                        // Extract the FK column from the join condition
+                        // The on_condition is (parent_col, child_col) e.g. ("t0.id", "t1.product_id")
+                        let fk_column = fk_resolution
+                            .join_clause
+                            .on_condition
+                            .1
+                            .split('.')
+                            .next_back()
+                            .unwrap_or("id")
+                            .to_string();
+
+                        count_subqueries.push(CountSubquery {
+                            result_alias: name.clone(),
+                            count_table: table.clone(),
+                            fk_column,
+                            parent_alias: from_alias.clone(),
+                            parent_key: fk_resolution.parent_key_column,
+                        });
+
+                        result_mapping
+                            .columns
+                            .insert(name.clone(), vec![name.clone()]);
+                    }
                 }
             }
         }
@@ -229,18 +278,19 @@ impl<'a> QueryPlanner<'a> {
             from_alias,
             joins,
             select_columns,
+            count_subqueries,
             result_mapping,
         })
     }
 
     /// Resolve FK relationship between two tables.
-    /// Returns the JoinClause and whether FK is "forward" (from->to) or "reverse" (to->from).
+    /// Returns the FkResolution with JoinClause, direction, and parent key column.
     fn resolve_fk(
         &self,
         from_table: &str,
         to_table: &str,
         alias_counter: usize,
-    ) -> Result<(JoinClause, FkDirection), PlanError> {
+    ) -> Result<FkResolution, PlanError> {
         let to_table_info =
             self.schema
                 .tables
@@ -255,18 +305,20 @@ impl<'a> QueryPlanner<'a> {
                 // Found: to_table.fk_col -> from_table.ref_col
                 // JOIN to_table ON from_table.ref_col = to_table.fk_col
                 let alias = format!("t{}", alias_counter);
-                return Ok((
-                    JoinClause {
+                let parent_key_column = fk.references_columns[0].clone();
+                return Ok(FkResolution {
+                    join_clause: JoinClause {
                         join_type: JoinType::Left,
                         table: to_table.to_string(),
                         alias: alias.clone(),
                         on_condition: (
-                            format!("t0.{}", fk.references_columns[0]),
+                            format!("t0.{}", parent_key_column),
                             format!("{}.{}", alias, fk.columns[0]),
                         ),
                     },
-                    FkDirection::Reverse,
-                ));
+                    direction: FkDirection::Reverse,
+                    parent_key_column,
+                });
             }
         }
 
@@ -284,18 +336,21 @@ impl<'a> QueryPlanner<'a> {
                 // Found: from_table.fk_col -> to_table.ref_col
                 // JOIN to_table ON from_table.fk_col = to_table.ref_col
                 let alias = format!("t{}", alias_counter);
-                return Ok((
-                    JoinClause {
+                // For forward (belongs-to), parent key is the FK column in from_table
+                let parent_key_column = fk.columns[0].clone();
+                return Ok(FkResolution {
+                    join_clause: JoinClause {
                         join_type: JoinType::Left,
                         table: to_table.to_string(),
                         alias: alias.clone(),
                         on_condition: (
-                            format!("t0.{}", fk.columns[0]),
+                            format!("t0.{}", parent_key_column),
                             format!("{}.{}", alias, fk.references_columns[0]),
                         ),
                     },
-                    FkDirection::Forward,
-                ));
+                    direction: FkDirection::Forward,
+                    parent_key_column,
+                });
             }
         }
 
@@ -315,10 +370,22 @@ pub enum FkDirection {
     Reverse,
 }
 
+/// Result of FK resolution.
+#[derive(Debug, Clone)]
+pub struct FkResolution {
+    /// The JOIN clause
+    pub join_clause: JoinClause,
+    /// Direction of the relationship
+    pub direction: FkDirection,
+    /// Parent's primary key column (used for grouping Vec relations)
+    pub parent_key_column: String,
+}
+
 impl QueryPlan {
     /// Generate SQL SELECT clause.
     pub fn select_sql(&self) -> String {
-        self.select_columns
+        let mut parts: Vec<String> = self
+            .select_columns
             .iter()
             .map(|col| {
                 format!(
@@ -326,8 +393,17 @@ impl QueryPlan {
                     col.table_alias, col.column, col.result_alias
                 )
             })
-            .collect::<Vec<_>>()
-            .join(", ")
+            .collect();
+
+        // Add COUNT subqueries
+        for count in &self.count_subqueries {
+            parts.push(format!(
+                "(SELECT COUNT(*) FROM \"{}\" WHERE \"{}\" = \"{}\".\"{}\" ) AS \"{}\"",
+                count.count_table, count.fk_column, count.parent_alias, count.parent_key, count.result_alias
+            ));
+        }
+
+        parts.join(", ")
     }
 
     /// Generate SQL FROM clause with JOINs.
