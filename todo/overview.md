@@ -12,7 +12,7 @@
 | # | Title | Notes |
 |---|-------|-------|
 | ~~003~~ | ~~Timestamp (jiff) support~~ | ✓ Done (facet-tokio-postgres) |
-| ~~004~~ | ~~JSONB operators~~ | ✓ Done (`@json-get`, `@json-get-text`, `@contains`, `@key-exists`) |
+| ~~004~~ | ~~JSONB operators~~ | ✓ Done (`@json-get`, `@json-get-text`, `@contains`, `@key-exists`) + integration tests |
 | ~~005~~ | ~~More filter operators~~ | ✓ Done (`@ne`, `@gte`, `@lte`, `@in`, `@not_null`) |
 | 006 | DISTINCT | `distinct true`, `distinct_on` |
 | 007 | GROUP BY / HAVING | Aggregates beyond COUNT |
@@ -30,7 +30,7 @@
 
 | # | Title | Notes |
 |---|-------|-------|
-| 012 | Codegen refactoring | Replace manual string manipulation with codegen crate AST API |
+| ~~012~~ | ~~Codegen refactoring~~ | ✓ Done (5/7 functions use Block API, 2 complex ones remain) |
 
 ## What's Done
 
@@ -44,5 +44,7 @@
 - **Relation-level ORDER BY** ✓ (uses LATERAL for `first: true`)
 - **Nested relations** ✓ (product → variants → prices)
 - Filter operators: `@null`, `@not-null`, `@ilike`, `@like`, `@gt`, `@lt`, `@gte`, `@lte`, `@ne`, `@in`, bare equality
+- **JSONB operators** ✓ (`@json-get`, `@json-get-text`, `@contains`, `@key-exists`) with integration tests
 - Raw SQL escape hatch: `sql <<SQL ... SQL`
 - LSP: completions, hover, diagnostics, inlay hints
+- **Codegen refactoring** ✓ (Block-based generation for better maintainability)

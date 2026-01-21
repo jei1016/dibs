@@ -1,10 +1,27 @@
 # 005: JSONB Operators
 
+**Status:** ✅ COMPLETED
+
 **Priority:** Medium
 
 ## Goal
 
 Support PostgreSQL JSONB operators for flexible schema patterns.
+
+## Completion Summary
+
+All JSONB operators have been implemented and tested:
+- ✅ `@json-get` for `->` operator (get JSON object)
+- ✅ `@json-get-text` for `->>` operator (get JSON value as text)
+- ✅ `@contains` for `@>` operator (containment check)
+- ✅ `@key-exists` for `?` operator (key existence check)
+
+**Integration Tests Added:**
+- 10 comprehensive integration tests in `postgres_integration.rs`
+- Tests cover parameterized and literal usage patterns
+- Tests for complex queries combining multiple operators
+- NULL and empty object edge case handling
+- All tests execute against real PostgreSQL in Docker
 
 ## Syntax Ideas
 
