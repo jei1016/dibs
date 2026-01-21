@@ -12,7 +12,7 @@
 | # | Title | Notes |
 |---|-------|-------|
 | ~~003~~ | ~~Timestamp (jiff) support~~ | ✓ Done (facet-tokio-postgres) |
-| 004 | JSONB operators | `->`, `->>`, `@>`, `?` |
+| ~~004~~ | ~~JSONB operators~~ | ✓ Done (`@json-get`, `@json-get-text`, `@contains`, `@key-exists`) |
 | ~~005~~ | ~~More filter operators~~ | ✓ Done (`@ne`, `@gte`, `@lte`, `@in`, `@not_null`) |
 | 006 | DISTINCT | `distinct true`, `distinct_on` |
 | 007 | GROUP BY / HAVING | Aggregates beyond COUNT |

@@ -619,6 +619,24 @@ impl QueryPlan {
     }
 }
 
+/// Format an Expr value as a SQL literal or placeholder.
+/// For parameters, updates param_order and param_idx.
+fn format_filter_value(
+    value: &Expr,
+    param_order: &mut Vec<String>,
+    param_idx: &mut usize,
+) -> String {
+    match value {
+        Expr::Param(name) => {
+            param_order.push(name.clone());
+            let placeholder = format!("${}", *param_idx);
+            *param_idx += 1;
+            placeholder
+        }
+        _ => value.to_string(),
+    }
+}
+
 /// Format a filter for a LATERAL subquery (no table alias).
 fn format_lateral_filter(
     filter: &Filter,
@@ -630,24 +648,36 @@ fn format_lateral_filter(
     match (&filter.op, &filter.value) {
         (FilterOp::IsNull, _) | (FilterOp::Eq, Expr::Null) => format!("{} IS NULL", col),
         (FilterOp::IsNotNull, _) => format!("{} IS NOT NULL", col),
-        (FilterOp::Eq, Expr::Param(name)) => {
-            param_order.push(name.clone());
-            let s = format!("{} = ${}", col, *param_idx);
-            *param_idx += 1;
-            s
-        }
-        (FilterOp::Eq, Expr::String(s)) => {
-            let escaped = s.replace('\'', "''");
-            format!("{} = '{}'", col, escaped)
-        }
-        (FilterOp::Eq, Expr::Int(n)) => format!("{} = {}", col, n),
-        (FilterOp::Eq, Expr::Bool(b)) => format!("{} = {}", col, b),
-        (FilterOp::ILike, Expr::Param(name)) => {
-            param_order.push(name.clone());
-            let s = format!("{} ILIKE ${}", col, *param_idx);
-            *param_idx += 1;
-            s
-        }
+        (FilterOp::Eq, value) => format!(
+            "{} = {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::ILike, value) => format!(
+            "{} ILIKE {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::JsonGet, value) => format!(
+            "{} -> {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::JsonGetText, value) => format!(
+            "{} ->> {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::Contains, value) => format!(
+            "{} @> {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::KeyExists, value) => format!(
+            "{} ? {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
         _ => format!("{} = TRUE", col), // fallback
     }
 }
@@ -664,67 +694,71 @@ fn format_join_filter(
     match (&filter.op, &filter.value) {
         (FilterOp::IsNull, _) | (FilterOp::Eq, Expr::Null) => format!("{} IS NULL", col),
         (FilterOp::IsNotNull, _) => format!("{} IS NOT NULL", col),
-        (FilterOp::Eq, Expr::Param(name)) => {
-            param_order.push(name.clone());
-            let s = format!("{} = ${}", col, *param_idx);
-            *param_idx += 1;
-            s
-        }
-        (FilterOp::Eq, Expr::String(s)) => {
-            let escaped = s.replace('\'', "''");
-            format!("{} = '{}'", col, escaped)
-        }
-        (FilterOp::Eq, Expr::Int(n)) => format!("{} = {}", col, n),
-        (FilterOp::Eq, Expr::Bool(b)) => format!("{} = {}", col, b),
-        (FilterOp::Ne, Expr::Param(name)) => {
-            param_order.push(name.clone());
-            let s = format!("{} != ${}", col, *param_idx);
-            *param_idx += 1;
-            s
-        }
-        (FilterOp::Lt, Expr::Param(name)) => {
-            param_order.push(name.clone());
-            let s = format!("{} < ${}", col, *param_idx);
-            *param_idx += 1;
-            s
-        }
-        (FilterOp::Lte, Expr::Param(name)) => {
-            param_order.push(name.clone());
-            let s = format!("{} <= ${}", col, *param_idx);
-            *param_idx += 1;
-            s
-        }
-        (FilterOp::Gt, Expr::Param(name)) => {
-            param_order.push(name.clone());
-            let s = format!("{} > ${}", col, *param_idx);
-            *param_idx += 1;
-            s
-        }
-        (FilterOp::Gte, Expr::Param(name)) => {
-            param_order.push(name.clone());
-            let s = format!("{} >= ${}", col, *param_idx);
-            *param_idx += 1;
-            s
-        }
-        (FilterOp::Like, Expr::Param(name)) => {
-            param_order.push(name.clone());
-            let s = format!("{} LIKE ${}", col, *param_idx);
-            *param_idx += 1;
-            s
-        }
-        (FilterOp::ILike, Expr::Param(name)) => {
-            param_order.push(name.clone());
-            let s = format!("{} ILIKE ${}", col, *param_idx);
-            *param_idx += 1;
-            s
-        }
-        (FilterOp::In, Expr::Param(name)) => {
-            param_order.push(name.clone());
-            let s = format!("{} = ANY(${})", col, *param_idx);
-            *param_idx += 1;
-            s
-        }
-        _ => format!("{} = TRUE", col), // fallback
+        (FilterOp::Eq, value) => format!(
+            "{} = {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::Ne, value) => format!(
+            "{} != {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::Lt, value) => format!(
+            "{} < {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::Lte, value) => format!(
+            "{} <= {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::Gt, value) => format!(
+            "{} > {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::Gte, value) => format!(
+            "{} >= {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::Like, value) => format!(
+            "{} LIKE {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::ILike, value) => format!(
+            "{} ILIKE {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::In, value) => format!(
+            "{} = ANY({})",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::JsonGet, value) => format!(
+            "{} -> {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::JsonGetText, value) => format!(
+            "{} ->> {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::Contains, value) => format!(
+            "{} @> {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
+        (FilterOp::KeyExists, value) => format!(
+            "{} ? {}",
+            col,
+            format_filter_value(value, param_order, param_idx)
+        ),
     }
 }
 

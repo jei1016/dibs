@@ -249,6 +249,34 @@ fn convert_filter_value(value: &schema::FilterValue) -> (FilterOp, Expr) {
                 .unwrap_or(Expr::Null);
             (FilterOp::In, expr)
         }
+        schema::FilterValue::JsonGet(args) => {
+            let expr = args
+                .first()
+                .map(|s| parse_expr_string(s))
+                .unwrap_or(Expr::Null);
+            (FilterOp::JsonGet, expr)
+        }
+        schema::FilterValue::JsonGetText(args) => {
+            let expr = args
+                .first()
+                .map(|s| parse_expr_string(s))
+                .unwrap_or(Expr::Null);
+            (FilterOp::JsonGetText, expr)
+        }
+        schema::FilterValue::Contains(args) => {
+            let expr = args
+                .first()
+                .map(|s| parse_expr_string(s))
+                .unwrap_or(Expr::Null);
+            (FilterOp::Contains, expr)
+        }
+        schema::FilterValue::KeyExists(args) => {
+            let expr = args
+                .first()
+                .map(|s| parse_expr_string(s))
+                .unwrap_or(Expr::Null);
+            (FilterOp::KeyExists, expr)
+        }
     }
 }
 

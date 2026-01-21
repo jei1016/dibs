@@ -309,6 +309,46 @@ fn format_filter(
             param_idx += 1;
             s
         }
+        (FilterOp::JsonGet, Expr::Param(name)) => {
+            param_order.push(name.clone());
+            let s = format!("{} -> ${}", col, param_idx);
+            param_idx += 1;
+            s
+        }
+        (FilterOp::JsonGet, Expr::String(s)) => {
+            let escaped = s.replace('\'', "''");
+            format!("{} -> '{}'", col, escaped)
+        }
+        (FilterOp::JsonGetText, Expr::Param(name)) => {
+            param_order.push(name.clone());
+            let s = format!("{} ->> ${}", col, param_idx);
+            param_idx += 1;
+            s
+        }
+        (FilterOp::JsonGetText, Expr::String(s)) => {
+            let escaped = s.replace('\'', "''");
+            format!("{} ->> '{}'", col, escaped)
+        }
+        (FilterOp::Contains, Expr::Param(name)) => {
+            param_order.push(name.clone());
+            let s = format!("{} @> ${}", col, param_idx);
+            param_idx += 1;
+            s
+        }
+        (FilterOp::Contains, Expr::String(s)) => {
+            let escaped = s.replace('\'', "''");
+            format!("{} @> '{}'", col, escaped)
+        }
+        (FilterOp::KeyExists, Expr::Param(name)) => {
+            param_order.push(name.clone());
+            let s = format!("{} ? ${}", col, param_idx);
+            param_idx += 1;
+            s
+        }
+        (FilterOp::KeyExists, Expr::String(s)) => {
+            let escaped = s.replace('\'', "''");
+            format!("{} ? '{}'", col, escaped)
+        }
         _ => format!("{} = TRUE", col), // fallback
     };
 
@@ -376,27 +416,19 @@ fn filter_to_sql(filter: &Filter) -> SqlExpr {
         },
         (FilterOp::Like, value) => {
             // Use Raw for LIKE since we don't have a dedicated type
-            SqlExpr::Raw(format!(
-                "\"{}\" LIKE {}",
-                filter.column,
-                match value {
-                    Expr::Param(name) => format!("${}", name),
-                    _ => "?".to_string(),
-                }
-            ))
+            SqlExpr::Raw(format!("\"{}\" LIKE {}", filter.column, value))
         }
         (FilterOp::ILike, value) => col.ilike(ast_expr_to_sql(value)),
         (FilterOp::In, value) => {
             // Use Raw for IN/ANY since we don't have a dedicated type
-            SqlExpr::Raw(format!(
-                "\"{}\" = ANY({})",
-                filter.column,
-                match value {
-                    Expr::Param(name) => format!("${}", name),
-                    _ => "?".to_string(),
-                }
-            ))
+            SqlExpr::Raw(format!("\"{}\" = ANY({})", filter.column, value))
         }
+        (FilterOp::JsonGet, value) => SqlExpr::Raw(format!("\"{}\" -> {}", filter.column, value)),
+        (FilterOp::JsonGetText, value) => {
+            SqlExpr::Raw(format!("\"{}\" ->> {}", filter.column, value))
+        }
+        (FilterOp::Contains, value) => SqlExpr::Raw(format!("\"{}\" @> {}", filter.column, value)),
+        (FilterOp::KeyExists, value) => SqlExpr::Raw(format!("\"{}\" ? {}", filter.column, value)),
     }
 }
 
@@ -716,6 +748,114 @@ ProductsByStatus @query{
             sql.sql
         );
         assert_eq!(sql.param_order, vec!["statuses"]);
+    }
+
+    #[test]
+    fn test_json_get_operator() {
+        let source = r#"
+ProductWithMetadata @query{
+  params{ key @string }
+  from product
+  where{ metadata @json-get($key) }
+  select{ id, metadata }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let sql = generate_simple_sql(&file.queries[0]);
+
+        assert!(sql.sql.contains(r#""metadata" -> $1"#), "SQL: {}", sql.sql);
+        assert_eq!(sql.param_order, vec!["key"]);
+    }
+
+    #[test]
+    fn test_json_get_operator_literal() {
+        let source = r#"
+ProductWithSettings @query{
+  from product
+  where{ metadata @json-get("settings") }
+  select{ id, metadata }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let sql = generate_simple_sql(&file.queries[0]);
+
+        assert!(
+            sql.sql.contains(r#""metadata" -> 'settings'"#),
+            "SQL: {}",
+            sql.sql
+        );
+        assert!(sql.param_order.is_empty());
+    }
+
+    #[test]
+    fn test_json_get_text_operator() {
+        let source = r#"
+ProductWithJsonValue @query{
+  params{ key @string }
+  from product
+  where{ metadata @json-get-text($key) }
+  select{ id, metadata }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let sql = generate_simple_sql(&file.queries[0]);
+
+        assert!(sql.sql.contains(r#""metadata" ->> $1"#), "SQL: {}", sql.sql);
+        assert_eq!(sql.param_order, vec!["key"]);
+    }
+
+    #[test]
+    fn test_json_contains_operator() {
+        let source = r#"
+ProductWithMetadataContains @query{
+  params{ json_value @string }
+  from product
+  where{ metadata @contains($json_value) }
+  select{ id, metadata }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let sql = generate_simple_sql(&file.queries[0]);
+
+        assert!(sql.sql.contains(r#""metadata" @> $1"#), "SQL: {}", sql.sql);
+        assert_eq!(sql.param_order, vec!["json_value"]);
+    }
+
+    #[test]
+    fn test_json_key_exists_operator() {
+        let source = r#"
+ProductWithMetadataKey @query{
+  params{ key @string }
+  from product
+  where{ metadata @key-exists($key) }
+  select{ id, metadata }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let sql = generate_simple_sql(&file.queries[0]);
+
+        assert!(sql.sql.contains(r#""metadata" ? $1"#), "SQL: {}", sql.sql);
+        assert_eq!(sql.param_order, vec!["key"]);
+    }
+
+    #[test]
+    fn test_json_key_exists_operator_literal() {
+        let source = r#"
+ProductWithLocale @query{
+  from product
+  where{ metadata @key-exists("locale") }
+  select{ id, metadata }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let sql = generate_simple_sql(&file.queries[0]);
+
+        assert!(
+            sql.sql.contains(r#""metadata" ? 'locale'"#),
+            "SQL: {}",
+            sql.sql
+        );
+        assert!(sql.param_order.is_empty());
     }
 
     #[test]

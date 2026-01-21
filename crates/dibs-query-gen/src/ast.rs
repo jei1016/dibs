@@ -121,6 +121,14 @@ pub enum FilterOp {
     IsNull,
     IsNotNull,
     In,
+    /// JSONB get object operator (->)
+    JsonGet,
+    /// JSONB get text operator (->>)
+    JsonGetText,
+    /// Contains operator (@>)
+    Contains,
+    /// Key exists operator (?)
+    KeyExists,
 }
 
 /// An expression (value in a filter or limit).
@@ -136,6 +144,18 @@ pub enum Expr {
     Bool(bool),
     /// Null.
     Null,
+}
+
+impl std::fmt::Display for Expr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Expr::Param(name) => write!(f, "${}", name),
+            Expr::String(s) => write!(f, "'{}'", s.replace('\'', "''")),
+            Expr::Int(n) => write!(f, "{}", n),
+            Expr::Bool(b) => write!(f, "{}", b),
+            Expr::Null => write!(f, "NULL"),
+        }
+    }
 }
 
 /// ORDER BY clause.
