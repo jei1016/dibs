@@ -38,6 +38,7 @@ AllProducts @query{
                 assert_eq!(q.from.as_deref(), Some("product"));
                 assert_eq!(q.select.as_ref().unwrap().fields.len(), 2);
             }
+            _ => panic!("expected Query"),
         }
     }
 
@@ -64,7 +65,9 @@ ProductByHandle @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("ProductByHandle").unwrap();
+        let Decl::Query(q) = file.decls.get("ProductByHandle").unwrap() else {
+            panic!("expected Query");
+        };
 
         let params = q.params.as_ref().expect("should have params");
         assert_eq!(params.params.len(), 2);
@@ -88,7 +91,7 @@ SearchProducts @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("SearchProducts").unwrap();
+        let Decl::Query(q) = file.decls.get("SearchProducts").unwrap() else { panic!("expected Query"); };
 
         let params = q.params.as_ref().expect("should have params");
         assert_eq!(params.params.len(), 2);
@@ -118,7 +121,7 @@ ProductByHandle @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("ProductByHandle").unwrap();
+        let Decl::Query(q) = file.decls.get("ProductByHandle").unwrap() else { panic!("expected Query"); };
 
         let where_clause = q.where_clause.as_ref().expect("should have where");
         assert_eq!(where_clause.filters.len(), 1);
@@ -140,7 +143,7 @@ ActiveProducts @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("ActiveProducts").unwrap();
+        let Decl::Query(q) = file.decls.get("ActiveProducts").unwrap() else { panic!("expected Query"); };
 
         let where_clause = q.where_clause.as_ref().expect("should have where");
         assert_eq!(where_clause.filters.len(), 1);
@@ -161,7 +164,7 @@ SearchProducts @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("SearchProducts").unwrap();
+        let Decl::Query(q) = file.decls.get("SearchProducts").unwrap() else { panic!("expected Query"); };
 
         let where_clause = q.where_clause.as_ref().expect("should have where");
         assert_eq!(where_clause.filters.len(), 1);
@@ -184,7 +187,7 @@ SingleProduct @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("SingleProduct").unwrap();
+        let Decl::Query(q) = file.decls.get("SingleProduct").unwrap() else { panic!("expected Query"); };
 
         assert_eq!(q.first, Some(true));
     }
@@ -199,7 +202,7 @@ ProductsSorted @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("ProductsSorted").unwrap();
+        let Decl::Query(q) = file.decls.get("ProductsSorted").unwrap() else { panic!("expected Query"); };
 
         let order_by = q.order_by.as_ref().expect("should have order_by");
         assert_eq!(order_by.columns.len(), 2);
@@ -222,7 +225,7 @@ PagedProducts @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("PagedProducts").unwrap();
+        let Decl::Query(q) = file.decls.get("PagedProducts").unwrap() else { panic!("expected Query"); };
 
         assert_eq!(q.limit, Some("10".to_string()));
         assert_eq!(q.offset, Some("$page".to_string()));
@@ -245,7 +248,7 @@ ProductWithTranslation @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("ProductWithTranslation").unwrap();
+        let Decl::Query(q) = file.decls.get("ProductWithTranslation").unwrap() else { panic!("expected Query"); };
 
         let select = q.select.as_ref().expect("should have select");
         assert_eq!(select.fields.len(), 2);
@@ -277,7 +280,7 @@ ProductWithVariantCount @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("ProductWithVariantCount").unwrap();
+        let Decl::Query(q) = file.decls.get("ProductWithVariantCount").unwrap() else { panic!("expected Query"); };
 
         let select = q.select.as_ref().expect("should have select");
         assert_eq!(select.fields.len(), 2);
@@ -317,7 +320,7 @@ TrendingProducts @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("TrendingProducts").unwrap();
+        let Decl::Query(q) = file.decls.get("TrendingProducts").unwrap() else { panic!("expected Query"); };
 
         // Should have params
         let params = q.params.as_ref().expect("should have params");

@@ -4,10 +4,14 @@
 
 use styx_parse::Span;
 
-/// A file containing multiple queries.
+/// A file containing multiple queries and mutations.
 #[derive(Debug, Clone)]
 pub struct QueryFile {
     pub queries: Vec<Query>,
+    pub inserts: Vec<InsertMutation>,
+    pub upserts: Vec<UpsertMutation>,
+    pub updates: Vec<UpdateMutation>,
+    pub deletes: Vec<DeleteMutation>,
 }
 
 /// A single query definition.
@@ -165,4 +169,95 @@ impl Query {
     pub fn is_raw(&self) -> bool {
         self.raw_sql.is_some()
     }
+}
+
+/// An INSERT mutation.
+#[derive(Debug, Clone)]
+pub struct InsertMutation {
+    /// Mutation name.
+    pub name: String,
+    /// Source span.
+    pub span: Option<Span>,
+    /// Parameters.
+    pub params: Vec<Param>,
+    /// Target table.
+    pub table: String,
+    /// Values to insert (column -> value expression).
+    pub values: Vec<(String, ValueExpr)>,
+    /// Columns to return.
+    pub returning: Vec<String>,
+}
+
+/// An UPSERT mutation (INSERT ... ON CONFLICT ... DO UPDATE).
+#[derive(Debug, Clone)]
+pub struct UpsertMutation {
+    /// Mutation name.
+    pub name: String,
+    /// Source span.
+    pub span: Option<Span>,
+    /// Parameters.
+    pub params: Vec<Param>,
+    /// Target table.
+    pub table: String,
+    /// Conflict target columns.
+    pub conflict_columns: Vec<String>,
+    /// Values to insert/update.
+    pub values: Vec<(String, ValueExpr)>,
+    /// Columns to return.
+    pub returning: Vec<String>,
+}
+
+/// An UPDATE mutation.
+#[derive(Debug, Clone)]
+pub struct UpdateMutation {
+    /// Mutation name.
+    pub name: String,
+    /// Source span.
+    pub span: Option<Span>,
+    /// Parameters.
+    pub params: Vec<Param>,
+    /// Target table.
+    pub table: String,
+    /// Values to set.
+    pub values: Vec<(String, ValueExpr)>,
+    /// WHERE filters.
+    pub filters: Vec<Filter>,
+    /// Columns to return.
+    pub returning: Vec<String>,
+}
+
+/// A DELETE mutation.
+#[derive(Debug, Clone)]
+pub struct DeleteMutation {
+    /// Mutation name.
+    pub name: String,
+    /// Source span.
+    pub span: Option<Span>,
+    /// Parameters.
+    pub params: Vec<Param>,
+    /// Target table.
+    pub table: String,
+    /// WHERE filters.
+    pub filters: Vec<Filter>,
+    /// Columns to return.
+    pub returning: Vec<String>,
+}
+
+/// A value expression for INSERT/UPDATE.
+#[derive(Debug, Clone)]
+pub enum ValueExpr {
+    /// Parameter reference ($name).
+    Param(String),
+    /// String literal.
+    String(String),
+    /// Integer literal.
+    Int(i64),
+    /// Boolean literal.
+    Bool(bool),
+    /// Null.
+    Null,
+    /// Current timestamp (NOW()).
+    Now,
+    /// Database default.
+    Default,
 }

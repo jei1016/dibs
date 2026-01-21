@@ -38,15 +38,38 @@ pub fn parse_query_file(source: &str) -> Result<QueryFile, ParseError> {
 
     // Convert to AST types
     let mut queries = Vec::new();
+    let mut inserts = Vec::new();
+    let mut upserts = Vec::new();
+    let mut updates = Vec::new();
+    let mut deletes = Vec::new();
+
     for (name, decl) in schema_file.decls {
         match decl {
             schema::Decl::Query(q) => {
                 queries.push(convert_query(&name, &q)?);
             }
+            schema::Decl::Insert(i) => {
+                inserts.push(convert_insert(&name, &i));
+            }
+            schema::Decl::Upsert(u) => {
+                upserts.push(convert_upsert(&name, &u));
+            }
+            schema::Decl::Update(u) => {
+                updates.push(convert_update(&name, &u));
+            }
+            schema::Decl::Delete(d) => {
+                deletes.push(convert_delete(&name, &d));
+            }
         }
     }
 
-    Ok(QueryFile { queries })
+    Ok(QueryFile {
+        queries,
+        inserts,
+        upserts,
+        updates,
+        deletes,
+    })
 }
 
 /// Convert schema Query to AST Query.
@@ -264,6 +287,96 @@ fn convert_select(select: &schema::Select) -> Vec<Field> {
         .collect()
 }
 
+/// Convert schema Insert to AST InsertMutation.
+fn convert_insert(name: &str, i: &schema::Insert) -> InsertMutation {
+    InsertMutation {
+        name: name.to_string(),
+        span: None,
+        params: convert_params(&i.params),
+        table: i.into.clone(),
+        values: convert_values(&i.values),
+        returning: convert_returning(&i.returning),
+    }
+}
+
+/// Convert schema Upsert to AST UpsertMutation.
+fn convert_upsert(name: &str, u: &schema::Upsert) -> UpsertMutation {
+    UpsertMutation {
+        name: name.to_string(),
+        span: None,
+        params: convert_params(&u.params),
+        table: u.into.clone(),
+        conflict_columns: u.conflict.columns.keys().cloned().collect(),
+        values: convert_values(&u.values),
+        returning: convert_returning(&u.returning),
+    }
+}
+
+/// Convert schema Update to AST UpdateMutation.
+fn convert_update(name: &str, u: &schema::Update) -> UpdateMutation {
+    UpdateMutation {
+        name: name.to_string(),
+        span: None,
+        params: convert_params(&u.params),
+        table: u.table.clone(),
+        values: convert_values(&u.set),
+        filters: convert_filters(&u.where_clause),
+        returning: convert_returning(&u.returning),
+    }
+}
+
+/// Convert schema Delete to AST DeleteMutation.
+fn convert_delete(name: &str, d: &schema::Delete) -> DeleteMutation {
+    DeleteMutation {
+        name: name.to_string(),
+        span: None,
+        params: convert_params(&d.params),
+        table: d.from.clone(),
+        filters: convert_filters(&d.where_clause),
+        returning: convert_returning(&d.returning),
+    }
+}
+
+/// Convert schema Values to AST Vec<(String, ValueExpr)>.
+fn convert_values(values: &schema::Values) -> Vec<(String, ValueExpr)> {
+    values
+        .columns
+        .iter()
+        .map(|(col, expr)| (col.clone(), convert_value_expr(expr)))
+        .collect()
+}
+
+/// Convert schema ValueExpr to AST ValueExpr.
+fn convert_value_expr(expr: &schema::ValueExpr) -> ValueExpr {
+    match expr {
+        schema::ValueExpr::Now => ValueExpr::Now,
+        schema::ValueExpr::Default => ValueExpr::Default,
+        schema::ValueExpr::Expr(s) => {
+            if let Some(param) = s.strip_prefix('$') {
+                ValueExpr::Param(param.to_string())
+            } else if s == "true" {
+                ValueExpr::Bool(true)
+            } else if s == "false" {
+                ValueExpr::Bool(false)
+            } else if s == "null" {
+                ValueExpr::Null
+            } else if let Ok(n) = s.parse::<i64>() {
+                ValueExpr::Int(n)
+            } else {
+                ValueExpr::String(s.clone())
+            }
+        }
+    }
+}
+
+/// Convert schema Returning to Vec<String>.
+fn convert_returning(returning: &Option<schema::Returning>) -> Vec<String> {
+    returning
+        .as_ref()
+        .map(|r| r.columns.keys().cloned().collect())
+        .unwrap_or_default()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -373,5 +486,124 @@ TrendingProducts @query{
         assert!(q.is_raw());
         assert!(q.raw_sql.is_some());
         assert_eq!(q.returns.len(), 2);
+    }
+
+    #[test]
+    fn test_parse_insert() {
+        let source = r#"
+CreateUser @insert{
+  params{
+    name @string
+    email @string
+  }
+  into users
+  values{
+    name $name
+    email $email
+    created_at @now
+  }
+  returning{ id, name, email, created_at }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        assert_eq!(file.inserts.len(), 1);
+
+        let i = &file.inserts[0];
+        assert_eq!(i.name, "CreateUser");
+        assert_eq!(i.table, "users");
+        assert_eq!(i.params.len(), 2);
+        assert_eq!(i.values.len(), 3);
+        assert_eq!(i.returning.len(), 4);
+
+        // Check value expressions
+        assert!(
+            matches!(i.values.iter().find(|(c, _)| c == "name"), Some((_, ValueExpr::Param(p))) if p == "name")
+        );
+        assert!(matches!(
+            i.values.iter().find(|(c, _)| c == "created_at"),
+            Some((_, ValueExpr::Now))
+        ));
+    }
+
+    #[test]
+    fn test_parse_upsert() {
+        let source = r#"
+UpsertProduct @upsert{
+  params{
+    id @uuid
+    name @string
+    price @decimal
+  }
+  into products
+  conflict{ id }
+  values{
+    id $id
+    name $name
+    price $price
+    updated_at @now
+  }
+  returning{ id, name, price, updated_at }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        assert_eq!(file.upserts.len(), 1);
+
+        let u = &file.upserts[0];
+        assert_eq!(u.name, "UpsertProduct");
+        assert_eq!(u.table, "products");
+        assert_eq!(u.conflict_columns, vec!["id"]);
+        assert_eq!(u.values.len(), 4);
+        assert_eq!(u.returning.len(), 4);
+    }
+
+    #[test]
+    fn test_parse_update() {
+        let source = r#"
+UpdateUserEmail @update{
+  params{
+    id @uuid
+    email @string
+  }
+  table users
+  set{
+    email $email
+    updated_at @now
+  }
+  where{ id $id }
+  returning{ id, email, updated_at }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        assert_eq!(file.updates.len(), 1);
+
+        let u = &file.updates[0];
+        assert_eq!(u.name, "UpdateUserEmail");
+        assert_eq!(u.table, "users");
+        assert_eq!(u.values.len(), 2);
+        assert_eq!(u.filters.len(), 1);
+        assert_eq!(u.filters[0].column, "id");
+        assert_eq!(u.returning.len(), 3);
+    }
+
+    #[test]
+    fn test_parse_delete() {
+        let source = r#"
+DeleteUser @delete{
+  params{
+    id @uuid
+  }
+  from users
+  where{ id $id }
+  returning{ id }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        assert_eq!(file.deletes.len(), 1);
+
+        let d = &file.deletes[0];
+        assert_eq!(d.name, "DeleteUser");
+        assert_eq!(d.table, "users");
+        assert_eq!(d.filters.len(), 1);
+        assert_eq!(d.returning.len(), 1);
     }
 }

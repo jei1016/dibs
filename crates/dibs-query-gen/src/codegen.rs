@@ -101,6 +101,22 @@ pub fn generate_rust_code_with_planner(
         generate_query_code(&ctx, query, &mut scope);
     }
 
+    for insert in &file.inserts {
+        generate_insert_code(&ctx, insert, &mut scope);
+    }
+
+    for upsert in &file.upserts {
+        generate_upsert_code(&ctx, upsert, &mut scope);
+    }
+
+    for update in &file.updates {
+        generate_update_code(&ctx, update, &mut scope);
+    }
+
+    for delete in &file.deletes {
+        generate_delete_code(&ctx, delete, &mut scope);
+    }
+
     GeneratedCode {
         code: scope.to_string(),
     }
@@ -727,6 +743,237 @@ fn to_snake_case(s: &str) -> String {
     result
 }
 
+// ============================================================================
+// Mutation code generation
+// ============================================================================
+
+fn generate_insert_code(_ctx: &CodegenContext, insert: &InsertMutation, scope: &mut Scope) {
+    let fn_name = to_snake_case(&insert.name);
+    let generated = crate::sql::generate_insert_sql(insert);
+
+    // Generate result struct if RETURNING is used
+    let return_ty = if insert.returning.is_empty() {
+        "Result<u64, QueryError>".to_string()
+    } else {
+        let struct_name = format!("{}Result", insert.name);
+        generate_mutation_result_struct(
+            _ctx,
+            &struct_name,
+            &insert.table,
+            &insert.returning,
+            scope,
+        );
+        format!("Result<Option<{}>, QueryError>", struct_name)
+    };
+
+    let mut func = Function::new(&fn_name);
+    func.vis("pub");
+    func.set_async(true);
+    func.generic("C");
+    func.arg("client", "&C");
+
+    for param in &insert.params {
+        let rust_ty = param_type_to_rust(&param.ty);
+        func.arg(&param.name, format!("&{}", rust_ty));
+    }
+
+    func.ret(&return_ty);
+    func.bound("C", "tokio_postgres::GenericClient");
+
+    let body = generate_mutation_body(&generated, insert.returning.is_empty());
+    func.line(body);
+
+    scope.push_fn(func);
+}
+
+fn generate_upsert_code(_ctx: &CodegenContext, upsert: &UpsertMutation, scope: &mut Scope) {
+    let fn_name = to_snake_case(&upsert.name);
+    let generated = crate::sql::generate_upsert_sql(upsert);
+
+    let return_ty = if upsert.returning.is_empty() {
+        "Result<u64, QueryError>".to_string()
+    } else {
+        let struct_name = format!("{}Result", upsert.name);
+        generate_mutation_result_struct(
+            _ctx,
+            &struct_name,
+            &upsert.table,
+            &upsert.returning,
+            scope,
+        );
+        format!("Result<Option<{}>, QueryError>", struct_name)
+    };
+
+    let mut func = Function::new(&fn_name);
+    func.vis("pub");
+    func.set_async(true);
+    func.generic("C");
+    func.arg("client", "&C");
+
+    for param in &upsert.params {
+        let rust_ty = param_type_to_rust(&param.ty);
+        func.arg(&param.name, format!("&{}", rust_ty));
+    }
+
+    func.ret(&return_ty);
+    func.bound("C", "tokio_postgres::GenericClient");
+
+    let body = generate_mutation_body(&generated, upsert.returning.is_empty());
+    func.line(body);
+
+    scope.push_fn(func);
+}
+
+fn generate_update_code(_ctx: &CodegenContext, update: &UpdateMutation, scope: &mut Scope) {
+    let fn_name = to_snake_case(&update.name);
+    let generated = crate::sql::generate_update_sql(update);
+
+    let return_ty = if update.returning.is_empty() {
+        "Result<u64, QueryError>".to_string()
+    } else {
+        let struct_name = format!("{}Result", update.name);
+        generate_mutation_result_struct(
+            _ctx,
+            &struct_name,
+            &update.table,
+            &update.returning,
+            scope,
+        );
+        format!("Result<Option<{}>, QueryError>", struct_name)
+    };
+
+    let mut func = Function::new(&fn_name);
+    func.vis("pub");
+    func.set_async(true);
+    func.generic("C");
+    func.arg("client", "&C");
+
+    for param in &update.params {
+        let rust_ty = param_type_to_rust(&param.ty);
+        func.arg(&param.name, format!("&{}", rust_ty));
+    }
+
+    func.ret(&return_ty);
+    func.bound("C", "tokio_postgres::GenericClient");
+
+    let body = generate_mutation_body(&generated, update.returning.is_empty());
+    func.line(body);
+
+    scope.push_fn(func);
+}
+
+fn generate_delete_code(_ctx: &CodegenContext, delete: &DeleteMutation, scope: &mut Scope) {
+    let fn_name = to_snake_case(&delete.name);
+    let generated = crate::sql::generate_delete_sql(delete);
+
+    let return_ty = if delete.returning.is_empty() {
+        "Result<u64, QueryError>".to_string()
+    } else {
+        let struct_name = format!("{}Result", delete.name);
+        generate_mutation_result_struct(
+            _ctx,
+            &struct_name,
+            &delete.table,
+            &delete.returning,
+            scope,
+        );
+        format!("Result<Option<{}>, QueryError>", struct_name)
+    };
+
+    let mut func = Function::new(&fn_name);
+    func.vis("pub");
+    func.set_async(true);
+    func.generic("C");
+    func.arg("client", "&C");
+
+    for param in &delete.params {
+        let rust_ty = param_type_to_rust(&param.ty);
+        func.arg(&param.name, format!("&{}", rust_ty));
+    }
+
+    func.ret(&return_ty);
+    func.bound("C", "tokio_postgres::GenericClient");
+
+    let body = generate_mutation_body(&generated, delete.returning.is_empty());
+    func.line(body);
+
+    scope.push_fn(func);
+}
+
+fn generate_mutation_result_struct(
+    ctx: &CodegenContext,
+    struct_name: &str,
+    table: &str,
+    returning: &[String],
+    scope: &mut Scope,
+) {
+    let mut st = Struct::new(struct_name);
+    st.vis("pub");
+    st.derive("Debug");
+    st.derive("Clone");
+    st.derive("Facet");
+    st.attr("facet(crate = dibs_runtime::facet)");
+
+    for col in returning {
+        let rust_ty = ctx
+            .schema
+            .column_type(table, col)
+            .unwrap_or_else(|| "String".to_string());
+        st.field(format!("pub {}", col), &rust_ty);
+    }
+
+    scope.push_struct(st);
+}
+
+fn generate_mutation_body(generated: &crate::sql::GeneratedSql, execute_only: bool) -> String {
+    let mut body = String::new();
+
+    body.push_str(&format!("const SQL: &str = r#\"{}\"#;\n\n", generated.sql));
+
+    let params: Vec<_> = generated
+        .param_order
+        .iter()
+        .filter(|p| !p.starts_with("__literal_"))
+        .collect();
+
+    if execute_only {
+        // No RETURNING - use execute
+        if params.is_empty() {
+            body.push_str("let affected = client.execute(SQL, &[]).await?;\n");
+        } else {
+            body.push_str("let affected = client.execute(SQL, &[");
+            for (i, param_name) in params.iter().enumerate() {
+                if i > 0 {
+                    body.push_str(", ");
+                }
+                body.push_str(param_name);
+            }
+            body.push_str("]).await?;\n");
+        }
+        body.push_str("Ok(affected)");
+    } else {
+        // Has RETURNING - use query
+        if params.is_empty() {
+            body.push_str("let rows = client.query(SQL, &[]).await?;\n");
+        } else {
+            body.push_str("let rows = client.query(SQL, &[");
+            for (i, param_name) in params.iter().enumerate() {
+                if i > 0 {
+                    body.push_str(", ");
+                }
+                body.push_str(param_name);
+            }
+            body.push_str("]).await?;\n");
+        }
+        body.push_str("match rows.into_iter().next() {\n");
+        body.push_str("    Some(row) => Ok(Some(from_row(&row)?)),\n");
+        body.push_str("    None => Ok(None),\n");
+        body.push('}');
+    }
+
+    body
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1183,5 +1430,140 @@ ProductWithVariantCount @query{
             code.code.contains("variant_count"),
             "Should alias the COUNT result"
         );
+    }
+
+    #[test]
+    fn test_generate_insert_code() {
+        let source = r#"
+CreateUser @insert{
+  params{
+    name @string
+    email @string
+  }
+  into users
+  values{
+    name $name
+    email $email
+    created_at @now
+  }
+  returning{ id, name, email, created_at }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let code = generate_rust_code(&file);
+
+        assert!(code.code.contains("pub struct CreateUserResult"));
+        assert!(code.code.contains("pub async fn create_user"));
+        assert!(code.code.contains("name: &String"));
+        assert!(code.code.contains("email: &String"));
+        assert!(code.code.contains("INSERT INTO"));
+        assert!(code.code.contains("RETURNING"));
+        assert!(
+            code.code
+                .contains("Result<Option<CreateUserResult>, QueryError>")
+        );
+    }
+
+    #[test]
+    fn test_generate_upsert_code() {
+        let source = r#"
+UpsertProduct @upsert{
+  params{
+    id @uuid
+    name @string
+    price @decimal
+  }
+  into products
+  conflict{ id }
+  values{
+    id $id
+    name $name
+    price $price
+    updated_at @now
+  }
+  returning{ id, name, price, updated_at }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let code = generate_rust_code(&file);
+
+        assert!(code.code.contains("pub struct UpsertProductResult"));
+        assert!(code.code.contains("pub async fn upsert_product"));
+        assert!(code.code.contains("id: &Uuid"));
+        assert!(code.code.contains("ON CONFLICT"));
+        assert!(code.code.contains("DO UPDATE SET"));
+    }
+
+    #[test]
+    fn test_generate_update_code() {
+        let source = r#"
+UpdateUserEmail @update{
+  params{
+    id @uuid
+    email @string
+  }
+  table users
+  set{
+    email $email
+    updated_at @now
+  }
+  where{ id $id }
+  returning{ id, email, updated_at }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let code = generate_rust_code(&file);
+
+        assert!(code.code.contains("pub struct UpdateUserEmailResult"));
+        assert!(code.code.contains("pub async fn update_user_email"));
+        assert!(code.code.contains("UPDATE"));
+        assert!(code.code.contains("SET"));
+        assert!(code.code.contains("WHERE"));
+    }
+
+    #[test]
+    fn test_generate_delete_code() {
+        let source = r#"
+DeleteUser @delete{
+  params{
+    id @uuid
+  }
+  from users
+  where{ id $id }
+  returning{ id }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let code = generate_rust_code(&file);
+
+        assert!(code.code.contains("pub struct DeleteUserResult"));
+        assert!(code.code.contains("pub async fn delete_user"));
+        assert!(code.code.contains("DELETE FROM"));
+        assert!(code.code.contains("WHERE"));
+    }
+
+    #[test]
+    fn test_generate_insert_without_returning() {
+        let source = r#"
+InsertLog @insert{
+  params{
+    message @string
+  }
+  into logs
+  values{
+    message $message
+    created_at @now
+  }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let code = generate_rust_code(&file);
+
+        // Should NOT generate a result struct
+        assert!(!code.code.contains("pub struct InsertLogResult"));
+        assert!(code.code.contains("pub async fn insert_log"));
+        // Should use execute() instead of query()
+        assert!(code.code.contains("client.execute"));
+        assert!(code.code.contains("Result<u64, QueryError>"));
     }
 }

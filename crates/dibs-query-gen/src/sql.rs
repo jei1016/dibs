@@ -311,6 +311,257 @@ fn format_filter(
     (result, param_idx)
 }
 
+/// Generate SQL for an INSERT mutation.
+pub fn generate_insert_sql(insert: &InsertMutation) -> GeneratedSql {
+    let mut sql = String::new();
+    let mut param_order = Vec::new();
+    let mut param_idx = 1;
+
+    // INSERT INTO
+    sql.push_str("INSERT INTO \"");
+    sql.push_str(&insert.table);
+    sql.push_str("\" (");
+
+    // Column names
+    let columns: Vec<_> = insert
+        .values
+        .iter()
+        .map(|(col, _)| format!("\"{}\"", col))
+        .collect();
+    sql.push_str(&columns.join(", "));
+    sql.push_str(") VALUES (");
+
+    // Values
+    let values: Vec<_> = insert
+        .values
+        .iter()
+        .map(|(_, expr)| {
+            let (val, new_idx) = format_value_expr(expr, param_idx, &mut param_order);
+            param_idx = new_idx;
+            val
+        })
+        .collect();
+    sql.push_str(&values.join(", "));
+    sql.push(')');
+
+    // RETURNING
+    if !insert.returning.is_empty() {
+        sql.push_str(" RETURNING ");
+        let cols: Vec<_> = insert
+            .returning
+            .iter()
+            .map(|c| format!("\"{}\"", c))
+            .collect();
+        sql.push_str(&cols.join(", "));
+    }
+
+    GeneratedSql {
+        sql,
+        param_order,
+        plan: None,
+    }
+}
+
+/// Generate SQL for an UPSERT mutation (INSERT ... ON CONFLICT ... DO UPDATE).
+pub fn generate_upsert_sql(upsert: &UpsertMutation) -> GeneratedSql {
+    let mut sql = String::new();
+    let mut param_order = Vec::new();
+    let mut param_idx = 1;
+
+    // INSERT INTO
+    sql.push_str("INSERT INTO \"");
+    sql.push_str(&upsert.table);
+    sql.push_str("\" (");
+
+    // Column names
+    let columns: Vec<_> = upsert
+        .values
+        .iter()
+        .map(|(col, _)| format!("\"{}\"", col))
+        .collect();
+    sql.push_str(&columns.join(", "));
+    sql.push_str(") VALUES (");
+
+    // Values
+    let values: Vec<_> = upsert
+        .values
+        .iter()
+        .map(|(_, expr)| {
+            let (val, new_idx) = format_value_expr(expr, param_idx, &mut param_order);
+            param_idx = new_idx;
+            val
+        })
+        .collect();
+    sql.push_str(&values.join(", "));
+    sql.push(')');
+
+    // ON CONFLICT
+    sql.push_str(" ON CONFLICT (");
+    let conflict_cols: Vec<_> = upsert
+        .conflict_columns
+        .iter()
+        .map(|c| format!("\"{}\"", c))
+        .collect();
+    sql.push_str(&conflict_cols.join(", "));
+    sql.push_str(") DO UPDATE SET ");
+
+    // SET clause - exclude conflict columns from update
+    let update_sets: Vec<_> = upsert
+        .values
+        .iter()
+        .filter(|(col, _)| !upsert.conflict_columns.contains(col))
+        .map(|(col, expr)| {
+            let (val, new_idx) = format_value_expr(expr, param_idx, &mut param_order);
+            param_idx = new_idx;
+            format!("\"{}\" = {}", col, val)
+        })
+        .collect();
+    sql.push_str(&update_sets.join(", "));
+
+    // RETURNING
+    if !upsert.returning.is_empty() {
+        sql.push_str(" RETURNING ");
+        let cols: Vec<_> = upsert
+            .returning
+            .iter()
+            .map(|c| format!("\"{}\"", c))
+            .collect();
+        sql.push_str(&cols.join(", "));
+    }
+
+    GeneratedSql {
+        sql,
+        param_order,
+        plan: None,
+    }
+}
+
+/// Generate SQL for an UPDATE mutation.
+pub fn generate_update_sql(update: &UpdateMutation) -> GeneratedSql {
+    let mut sql = String::new();
+    let mut param_order = Vec::new();
+    let mut param_idx = 1;
+
+    // UPDATE
+    sql.push_str("UPDATE \"");
+    sql.push_str(&update.table);
+    sql.push_str("\" SET ");
+
+    // SET clause
+    let sets: Vec<_> = update
+        .values
+        .iter()
+        .map(|(col, expr)| {
+            let (val, new_idx) = format_value_expr(expr, param_idx, &mut param_order);
+            param_idx = new_idx;
+            format!("\"{}\" = {}", col, val)
+        })
+        .collect();
+    sql.push_str(&sets.join(", "));
+
+    // WHERE
+    if !update.filters.is_empty() {
+        sql.push_str(" WHERE ");
+        let conditions: Vec<_> = update
+            .filters
+            .iter()
+            .map(|f| {
+                let (cond, new_idx) = format_filter(f, param_idx, &mut param_order);
+                param_idx = new_idx;
+                cond
+            })
+            .collect();
+        sql.push_str(&conditions.join(" AND "));
+    }
+
+    // RETURNING
+    if !update.returning.is_empty() {
+        sql.push_str(" RETURNING ");
+        let cols: Vec<_> = update
+            .returning
+            .iter()
+            .map(|c| format!("\"{}\"", c))
+            .collect();
+        sql.push_str(&cols.join(", "));
+    }
+
+    GeneratedSql {
+        sql,
+        param_order,
+        plan: None,
+    }
+}
+
+/// Generate SQL for a DELETE mutation.
+pub fn generate_delete_sql(delete: &DeleteMutation) -> GeneratedSql {
+    let mut sql = String::new();
+    let mut param_order = Vec::new();
+    let mut param_idx = 1;
+
+    // DELETE FROM
+    sql.push_str("DELETE FROM \"");
+    sql.push_str(&delete.table);
+    sql.push('"');
+
+    // WHERE
+    if !delete.filters.is_empty() {
+        sql.push_str(" WHERE ");
+        let conditions: Vec<_> = delete
+            .filters
+            .iter()
+            .map(|f| {
+                let (cond, new_idx) = format_filter(f, param_idx, &mut param_order);
+                param_idx = new_idx;
+                cond
+            })
+            .collect();
+        sql.push_str(&conditions.join(" AND "));
+    }
+
+    // RETURNING
+    if !delete.returning.is_empty() {
+        sql.push_str(" RETURNING ");
+        let cols: Vec<_> = delete
+            .returning
+            .iter()
+            .map(|c| format!("\"{}\"", c))
+            .collect();
+        sql.push_str(&cols.join(", "));
+    }
+
+    GeneratedSql {
+        sql,
+        param_order,
+        plan: None,
+    }
+}
+
+/// Format a value expression for INSERT/UPDATE.
+fn format_value_expr(
+    expr: &ValueExpr,
+    mut param_idx: usize,
+    param_order: &mut Vec<String>,
+) -> (String, usize) {
+    let result = match expr {
+        ValueExpr::Param(name) => {
+            param_order.push(name.clone());
+            let s = format!("${}", param_idx);
+            param_idx += 1;
+            s
+        }
+        ValueExpr::String(s) => {
+            let escaped = s.replace('\'', "''");
+            format!("'{}'", escaped)
+        }
+        ValueExpr::Int(n) => n.to_string(),
+        ValueExpr::Bool(b) => b.to_string(),
+        ValueExpr::Null => "NULL".to_string(),
+        ValueExpr::Now => "NOW()".to_string(),
+        ValueExpr::Default => "DEFAULT".to_string(),
+    };
+    (result, param_idx)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -726,5 +977,116 @@ ProductWithTranslation @query{
 
         // Check param order: relation params first, then base WHERE params
         assert_eq!(sql.param_order, vec!["locale", "handle"]);
+    }
+
+    #[test]
+    fn test_insert_sql() {
+        let source = r#"
+CreateUser @insert{
+  params{
+    name @string
+    email @string
+  }
+  into users
+  values{
+    name $name
+    email $email
+    created_at @now
+  }
+  returning{ id, name, email, created_at }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let sql = generate_insert_sql(&file.inserts[0]);
+
+        assert!(sql.sql.contains("INSERT INTO \"users\""));
+        assert!(sql.sql.contains("\"name\""));
+        assert!(sql.sql.contains("\"email\""));
+        assert!(sql.sql.contains("\"created_at\""));
+        assert!(sql.sql.contains("NOW()"));
+        assert!(sql.sql.contains("RETURNING"));
+        assert_eq!(sql.param_order.len(), 2);
+    }
+
+    #[test]
+    fn test_upsert_sql() {
+        let source = r#"
+UpsertProduct @upsert{
+  params{
+    id @uuid
+    name @string
+    price @decimal
+  }
+  into products
+  conflict{ id }
+  values{
+    id $id
+    name $name
+    price $price
+    updated_at @now
+  }
+  returning{ id, name, price, updated_at }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let sql = generate_upsert_sql(&file.upserts[0]);
+
+        assert!(sql.sql.contains("INSERT INTO \"products\""));
+        assert!(sql.sql.contains("ON CONFLICT (\"id\")"));
+        assert!(sql.sql.contains("DO UPDATE SET"));
+        // id should NOT be in the update set
+        assert!(!sql.sql.contains("\"id\" = $"));
+        assert!(sql.sql.contains("\"name\" ="));
+        assert!(sql.sql.contains("\"price\" ="));
+        assert!(sql.sql.contains("RETURNING"));
+    }
+
+    #[test]
+    fn test_update_sql() {
+        let source = r#"
+UpdateUserEmail @update{
+  params{
+    id @uuid
+    email @string
+  }
+  table users
+  set{
+    email $email
+    updated_at @now
+  }
+  where{ id $id }
+  returning{ id, email, updated_at }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let sql = generate_update_sql(&file.updates[0]);
+
+        assert!(sql.sql.contains("UPDATE \"users\" SET"));
+        assert!(sql.sql.contains("\"email\" = $1"));
+        assert!(sql.sql.contains("\"updated_at\" = NOW()"));
+        assert!(sql.sql.contains("WHERE \"id\" = $2"));
+        assert!(sql.sql.contains("RETURNING"));
+        assert_eq!(sql.param_order, vec!["email", "id"]);
+    }
+
+    #[test]
+    fn test_delete_sql() {
+        let source = r#"
+DeleteUser @delete{
+  params{
+    id @uuid
+  }
+  from users
+  where{ id $id }
+  returning{ id }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+        let sql = generate_delete_sql(&file.deletes[0]);
+
+        assert!(sql.sql.contains("DELETE FROM \"users\""));
+        assert!(sql.sql.contains("WHERE \"id\" = $1"));
+        assert!(sql.sql.contains("RETURNING \"id\""));
+        assert_eq!(sql.param_order, vec!["id"]);
     }
 }
