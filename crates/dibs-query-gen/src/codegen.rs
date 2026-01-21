@@ -3,7 +3,7 @@
 use crate::ast::*;
 use crate::planner::PlannerSchema;
 use crate::sql::{generate_simple_sql, generate_sql_with_joins};
-use codegen::{Function, Scope, Struct};
+use codegen::{Block, Function, Scope, Struct};
 use std::collections::HashMap;
 
 /// Generated Rust code for a query file.
@@ -273,8 +273,9 @@ fn generate_query_function(
     func.bound("C", "tokio_postgres::GenericClient");
 
     // Generate function body
-    let body = if let Some(raw_sql) = &query.raw_sql {
-        generate_raw_query_body(query, raw_sql)
+    if let Some(raw_sql) = &query.raw_sql {
+        let body = generate_raw_query_body(query, raw_sql);
+        func.line(block_to_string(&body));
     } else {
         // Use planner path if query has relations or COUNT fields
         let needs_planner = query
@@ -283,13 +284,14 @@ fn generate_query_function(
             .any(|f| matches!(f, Field::Relation { .. }) || matches!(f, Field::Count { .. }));
 
         if needs_planner && ctx.planner_schema.is_some() {
-            generate_join_query_body(ctx, query, struct_name)
+            let body = generate_join_query_body(ctx, query, struct_name);
+            func.line(body);
         } else {
-            generate_simple_query_body(query)
+            let body = generate_simple_query_body(query);
+            func.line(block_to_string(&body));
         }
     };
 
-    func.line(body);
     scope.push_fn(func);
 }
 
@@ -333,20 +335,22 @@ fn generate_join_query_body(ctx: &CodegenContext, query: &Query, struct_name: &s
     let generated = match generate_sql_with_joins(query, planner_schema) {
         Ok(g) => g,
         Err(e) => {
+            let fallback = generate_simple_query_body(query);
             return format!(
                 "// Warning: JOIN planning failed: {}\n{}",
                 e,
-                generate_simple_query_body(query)
+                block_to_string(&fallback)
             );
         }
     };
 
     let plan = generated.plan.as_ref().unwrap();
 
-    let mut body = String::new();
+    let mut block = Block::new("");
 
     // SQL constant
-    body.push_str(&format!("const SQL: &str = r#\"{}\"#;\n\n", generated.sql));
+    block.line(format!("const SQL: &str = r#\"{}\"#;", generated.sql));
+    block.line("");
 
     // Build params array
     let params: Vec<_> = generated
@@ -356,29 +360,31 @@ fn generate_join_query_body(ctx: &CodegenContext, query: &Query, struct_name: &s
         .collect();
 
     if params.is_empty() {
-        body.push_str("let rows = client.query(SQL, &[]).await?;\n\n");
+        block.line("let rows = client.query(SQL, &[]).await?;");
     } else {
-        body.push_str("let rows = client.query(SQL, &[");
-        for (i, param_name) in params.iter().enumerate() {
-            if i > 0 {
-                body.push_str(", ");
-            }
-            body.push_str(param_name);
-        }
-        body.push_str("]).await?;\n\n");
+        let params_str = params
+            .iter()
+            .map(|p| p.as_str())
+            .collect::<Vec<_>>()
+            .join(", ");
+        block.line(format!(
+            "let rows = client.query(SQL, &[{}]).await?;",
+            params_str
+        ));
     }
+    block.line("");
 
     // Check if we have Vec relations - if so, use HashMap-based grouping
     if has_vec_relations(query) {
         if has_nested_vec_relations(&query.select) {
-            body.push_str(&generate_nested_vec_relation_assembly(
+            block.line(generate_nested_vec_relation_assembly(
                 ctx,
                 query,
                 struct_name,
                 plan,
             ));
         } else {
-            body.push_str(&generate_vec_relation_assembly(
+            block.line(generate_vec_relation_assembly(
                 ctx,
                 query,
                 struct_name,
@@ -386,10 +392,10 @@ fn generate_join_query_body(ctx: &CodegenContext, query: &Query, struct_name: &s
             ));
         }
     } else {
-        body.push_str(&generate_option_relation_assembly(ctx, query, struct_name));
+        block.line(generate_option_relation_assembly(ctx, query, struct_name));
     }
 
-    body
+    block_to_string(&block)
 }
 
 /// Generate assembly code for queries with Vec (has-many) relations.
@@ -996,10 +1002,12 @@ fn generate_option_relation_assembly(
     query: &Query,
     struct_name: &str,
 ) -> String {
-    let mut body = String::new();
+    let mut block = Block::new("");
 
-    body.push_str("// Assemble flat rows into nested structs\n");
-    body.push_str("let results: Result<Vec<_>, QueryError> = rows.iter().map(|row| {\n");
+    block.line("// Assemble flat rows into nested structs");
+
+    let mut map_block =
+        Block::new("let results: Result<Vec<_>, QueryError> = rows.iter().map(|row|");
 
     // Extract base table columns and COUNT fields
     for field in &query.select {
@@ -1009,13 +1017,13 @@ fn generate_option_relation_assembly(
                     .schema
                     .column_type(&query.from, name)
                     .unwrap_or_else(|| "String".to_string());
-                body.push_str(&format!(
-                    "    let {}: {} = row.get(\"{}\");\n",
+                map_block.line(format!(
+                    "let {}: {} = row.get(\"{}\");",
                     name, rust_ty, name
                 ));
             }
             Field::Count { name, .. } => {
-                body.push_str(&format!("    let {}: i64 = row.get(\"{}\");\n", name, name));
+                map_block.line(format!("let {}: i64 = row.get(\"{}\");", name, name));
             }
             _ => {}
         }
@@ -1046,8 +1054,8 @@ fn generate_option_relation_assembly(
                     } else {
                         format!("Option<{}>", rust_ty)
                     };
-                    body.push_str(&format!(
-                        "    let {}: {} = row.get(\"{}\");\n",
+                    map_block.line(format!(
+                        "let {}: {} = row.get(\"{}\");",
                         alias, wrapped_ty, alias
                     ));
                 }
@@ -1057,16 +1065,16 @@ fn generate_option_relation_assembly(
                 let first_col = get_first_column(select);
                 let first_alias = format!("{}_{}", name, first_col);
 
-                body.push_str(&format!(
-                    "    let {} = {}.map(|{}_val| {} {{\n",
-                    name, first_alias, first_alias, nested_name
-                ));
-                // Get the type of the first column to know if _val needs wrapping
                 let first_col_type = ctx
                     .schema
                     .column_type(rel_table, &first_col)
                     .unwrap_or_else(|| "String".to_string());
                 let first_col_is_optional = first_col_type.starts_with("Option<");
+
+                let mut rel_block = Block::new(format!(
+                    "let {} = {}.map(|{}_val| {}",
+                    name, first_alias, first_alias, nested_name
+                ));
 
                 for f in select {
                     if let Field::Column { name: col_name, .. } = f {
@@ -1075,9 +1083,6 @@ fn generate_option_relation_assembly(
                             .schema
                             .column_type(rel_table, col_name)
                             .unwrap_or_else(|| "String".to_string());
-                        // The first column is used in .map(), so we must use the closure param
-                        // If the first column was Option<T>, _val is T (unwrapped by .map())
-                        // so we need Some() to match the field's Option<T> type
                         let value_expr = if alias == first_alias {
                             if first_col_is_optional {
                                 format!("Some({}_val)", first_alias)
@@ -1089,43 +1094,51 @@ fn generate_option_relation_assembly(
                         } else {
                             format!("{}.unwrap()", alias)
                         };
-                        body.push_str(&format!("        {}: {},\n", col_name, value_expr));
+                        rel_block.line(format!("{}: {},", col_name, value_expr));
                     }
                 }
-                body.push_str("    });\n");
+                rel_block.after("});");
+                map_block.push_block(rel_block);
             }
         }
     }
 
     // Build the result struct
-    body.push_str(&format!("    Ok({} {{\n", struct_name));
+    let mut result_block = Block::new(format!("Ok({}", struct_name));
     for field in &query.select {
         match field {
             Field::Column { name, .. }
             | Field::Relation { name, .. }
             | Field::Count { name, .. } => {
-                body.push_str(&format!("        {},\n", name));
+                result_block.line(format!("{},", name));
             }
         }
     }
-    body.push_str("    })\n");
-    body.push_str("}).collect();\n\n");
+    result_block.after("})");
+    map_block.push_block(result_block);
+
+    map_block.after("}).collect();");
+    block.push_block(map_block);
+    block.line("");
 
     if query.first {
-        body.push_str("Ok(results?.into_iter().next())");
+        block.line("Ok(results?.into_iter().next())");
     } else {
-        body.push_str("results");
+        block.line("results");
     }
 
-    body
+    block_to_string(&block)
 }
 
-fn generate_simple_query_body(query: &Query) -> String {
+fn generate_simple_query_body(query: &Query) -> Block {
     let generated = generate_simple_sql(query);
-    let mut body = String::new();
+    let mut block = Block::new("");
 
-    body.push_str(&format!("const SQL: &str = r#\"{}\"#;\n\n", generated.sql));
+    // SQL constant
+    block.line(format!("const SQL: &str = r#\"{}\"#;", generated.sql));
+    block.line("");
 
+    // Query execution
     let params: Vec<_> = generated
         .param_order
         .iter()
@@ -1133,64 +1146,74 @@ fn generate_simple_query_body(query: &Query) -> String {
         .collect();
 
     if params.is_empty() {
-        body.push_str("let rows = client.query(SQL, &[]).await?;\n");
+        block.line("let rows = client.query(SQL, &[]).await?;");
     } else {
-        body.push_str("let rows = client.query(SQL, &[");
-        for (i, param_name) in params.iter().enumerate() {
-            if i > 0 {
-                body.push_str(", ");
-            }
-            body.push_str(param_name);
-        }
-        body.push_str("]).await?;\n");
+        let params_str = params
+            .iter()
+            .map(|p| p.as_str())
+            .collect::<Vec<_>>()
+            .join(", ");
+        block.line(format!(
+            "let rows = client.query(SQL, &[{}]).await?;",
+            params_str
+        ));
     }
 
+    // Result processing
     if query.first {
-        body.push_str("match rows.into_iter().next() {\n");
-        body.push_str("    Some(row) => Ok(Some(from_row(&row)?)),\n");
-        body.push_str("    None => Ok(None),\n");
-        body.push('}');
+        let mut match_block = Block::new("match rows.into_iter().next()");
+        match_block.line("Some(row) => Ok(Some(from_row(&row)?)),");
+        match_block.line("None => Ok(None),");
+        match_block.after("}");
+        block.push_block(match_block);
     } else {
-        body.push_str("rows.iter().map(|row| Ok(from_row(row)?)).collect()");
+        block.line("rows.iter().map(|row| Ok(from_row(row)?)).collect()");
     }
 
-    body
+    block
 }
 
-fn generate_raw_query_body(query: &Query, raw_sql: &str) -> String {
+fn generate_raw_query_body(query: &Query, raw_sql: &str) -> Block {
     let cleaned: String = raw_sql
         .lines()
         .map(|l| l.trim())
         .collect::<Vec<_>>()
         .join("\n");
 
-    let mut body = String::new();
+    let mut block = Block::new("");
 
-    body.push_str(&format!("const SQL: &str = r#\"{}\"#;\n\n", cleaned.trim()));
+    // SQL constant
+    block.line(format!("const SQL: &str = r#\"{}\"#;", cleaned.trim()));
+    block.line("");
 
+    // Query execution
     if query.params.is_empty() {
-        body.push_str("let rows = client.query(SQL, &[]).await?;\n");
+        block.line("let rows = client.query(SQL, &[]).await?;");
     } else {
-        body.push_str("let rows = client.query(SQL, &[");
-        for (i, param) in query.params.iter().enumerate() {
-            if i > 0 {
-                body.push_str(", ");
-            }
-            body.push_str(&param.name);
-        }
-        body.push_str("]).await?;\n");
+        let params_str = query
+            .params
+            .iter()
+            .map(|p| p.name.as_str())
+            .collect::<Vec<_>>()
+            .join(", ");
+        block.line(format!(
+            "let rows = client.query(SQL, &[{}]).await?;",
+            params_str
+        ));
     }
 
+    // Result processing
     if query.first {
-        body.push_str("match rows.into_iter().next() {\n");
-        body.push_str("    Some(row) => Ok(Some(from_row(&row)?)),\n");
-        body.push_str("    None => Ok(None),\n");
-        body.push('}');
+        let mut match_block = Block::new("match rows.into_iter().next()");
+        match_block.line("Some(row) => Ok(Some(from_row(&row)?)),");
+        match_block.line("None => Ok(None),");
+        match_block.after("}");
+        block.push_block(match_block);
     } else {
-        body.push_str("rows.iter().map(|row| Ok(from_row(row)?)).collect()");
+        block.line("rows.iter().map(|row| Ok(from_row(row)?)).collect()");
     }
 
-    body
+    block
 }
 
 fn get_first_column(select: &[Field]) -> String {
@@ -1216,6 +1239,14 @@ fn param_type_to_rust(ty: &ParamType) -> String {
         ParamType::Timestamp => "Timestamp".to_string(),
         ParamType::Optional(inner) => format!("Option<{}>", param_type_to_rust(inner)),
     }
+}
+
+/// Helper to format a Block to a String.
+fn block_to_string(block: &Block) -> String {
+    let mut output = String::new();
+    let mut formatter = codegen::Formatter::new(&mut output);
+    block.fmt(&mut formatter).expect("formatting failed");
+    output
 }
 
 fn to_pascal_case(s: &str) -> String {
@@ -1291,7 +1322,7 @@ fn generate_insert_code(_ctx: &CodegenContext, insert: &InsertMutation, scope: &
     func.bound("C", "tokio_postgres::GenericClient");
 
     let body = generate_mutation_body(&generated, insert.returning.is_empty());
-    func.line(body);
+    func.line(block_to_string(&body));
 
     scope.push_fn(func);
 }
@@ -1329,7 +1360,7 @@ fn generate_upsert_code(_ctx: &CodegenContext, upsert: &UpsertMutation, scope: &
     func.bound("C", "tokio_postgres::GenericClient");
 
     let body = generate_mutation_body(&generated, upsert.returning.is_empty());
-    func.line(body);
+    func.line(block_to_string(&body));
 
     scope.push_fn(func);
 }
@@ -1367,7 +1398,7 @@ fn generate_update_code(_ctx: &CodegenContext, update: &UpdateMutation, scope: &
     func.bound("C", "tokio_postgres::GenericClient");
 
     let body = generate_mutation_body(&generated, update.returning.is_empty());
-    func.line(body);
+    func.line(block_to_string(&body));
 
     scope.push_fn(func);
 }
@@ -1405,7 +1436,7 @@ fn generate_delete_code(_ctx: &CodegenContext, delete: &DeleteMutation, scope: &
     func.bound("C", "tokio_postgres::GenericClient");
 
     let body = generate_mutation_body(&generated, delete.returning.is_empty());
-    func.line(body);
+    func.line(block_to_string(&body));
 
     scope.push_fn(func);
 }
@@ -1435,10 +1466,12 @@ fn generate_mutation_result_struct(
     scope.push_struct(st);
 }
 
-fn generate_mutation_body(generated: &crate::sql::GeneratedSql, execute_only: bool) -> String {
-    let mut body = String::new();
+fn generate_mutation_body(generated: &crate::sql::GeneratedSql, execute_only: bool) -> Block {
+    let mut block = Block::new("");
 
-    body.push_str(&format!("const SQL: &str = r#\"{}\"#;\n\n", generated.sql));
+    // SQL constant
+    block.line(format!("const SQL: &str = r#\"{}\"#;", generated.sql));
+    block.line("");
 
     let params: Vec<_> = generated
         .param_order
@@ -1449,39 +1482,42 @@ fn generate_mutation_body(generated: &crate::sql::GeneratedSql, execute_only: bo
     if execute_only {
         // No RETURNING - use execute
         if params.is_empty() {
-            body.push_str("let affected = client.execute(SQL, &[]).await?;\n");
+            block.line("let affected = client.execute(SQL, &[]).await?;");
         } else {
-            body.push_str("let affected = client.execute(SQL, &[");
-            for (i, param_name) in params.iter().enumerate() {
-                if i > 0 {
-                    body.push_str(", ");
-                }
-                body.push_str(param_name);
-            }
-            body.push_str("]).await?;\n");
+            let params_str = params
+                .iter()
+                .map(|p| p.as_str())
+                .collect::<Vec<_>>()
+                .join(", ");
+            block.line(format!(
+                "let affected = client.execute(SQL, &[{}]).await?;",
+                params_str
+            ));
         }
-        body.push_str("Ok(affected)");
+        block.line("Ok(affected)");
     } else {
         // Has RETURNING - use query
         if params.is_empty() {
-            body.push_str("let rows = client.query(SQL, &[]).await?;\n");
+            block.line("let rows = client.query(SQL, &[]).await?;");
         } else {
-            body.push_str("let rows = client.query(SQL, &[");
-            for (i, param_name) in params.iter().enumerate() {
-                if i > 0 {
-                    body.push_str(", ");
-                }
-                body.push_str(param_name);
-            }
-            body.push_str("]).await?;\n");
+            let params_str = params
+                .iter()
+                .map(|p| p.as_str())
+                .collect::<Vec<_>>()
+                .join(", ");
+            block.line(format!(
+                "let rows = client.query(SQL, &[{}]).await?;",
+                params_str
+            ));
         }
-        body.push_str("match rows.into_iter().next() {\n");
-        body.push_str("    Some(row) => Ok(Some(from_row(&row)?)),\n");
-        body.push_str("    None => Ok(None),\n");
-        body.push('}');
+        let mut match_block = Block::new("match rows.into_iter().next()");
+        match_block.line("Some(row) => Ok(Some(from_row(&row)?)),");
+        match_block.line("None => Ok(None),");
+        match_block.after("}");
+        block.push_block(match_block);
     }
 
-    body
+    block
 }
 
 #[cfg(test)]
