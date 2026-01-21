@@ -848,3 +848,365 @@ ActiveProductWithTranslation @query{
         "Should not include gadget (draft)"
     );
 }
+
+// ============================================================================
+// Mutation Integration Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_insert_mutation() {
+    let (_container, client) = setup_postgres().await;
+    create_test_tables(&client).await;
+
+    let source = r#"
+CreateProduct @insert{
+    params {handle @string, status @string}
+    into product
+    values {handle $handle, status $status}
+    returning {id, handle, status}
+}
+"#;
+    let file = parse_query_file(source).unwrap();
+    let insert = &file.inserts[0];
+
+    // Generate SQL
+    let generated = dibs_query_gen::generate_insert_sql(insert);
+    tracing::info!("Generated INSERT SQL: {}", generated.sql);
+
+    // Verify SQL structure
+    assert!(
+        generated.sql.contains("INSERT INTO \"product\""),
+        "Should INSERT INTO product"
+    );
+    assert!(
+        generated.sql.contains("(\"handle\", \"status\")"),
+        "Should have column list"
+    );
+    assert!(
+        generated.sql.contains("VALUES ($1, $2)"),
+        "Should have parameterized values"
+    );
+    assert!(
+        generated
+            .sql
+            .contains("RETURNING \"id\", \"handle\", \"status\""),
+        "Should have RETURNING clause"
+    );
+
+    // Execute the insert
+    let handle = "new-product".to_string();
+    let status = "draft".to_string();
+    let rows: Vec<Row> = client
+        .query(&generated.sql, &[&handle, &status])
+        .await
+        .unwrap();
+
+    assert_eq!(rows.len(), 1, "Should return 1 row");
+    let returned_handle: String = rows[0].get("handle");
+    let returned_status: String = rows[0].get("status");
+    assert_eq!(returned_handle, "new-product");
+    assert_eq!(returned_status, "draft");
+
+    // Verify it was actually inserted
+    let verify: Vec<Row> = client
+        .query("SELECT * FROM product WHERE handle = $1", &[&handle])
+        .await
+        .unwrap();
+    assert_eq!(verify.len(), 1, "Product should exist in database");
+}
+
+#[tokio::test]
+async fn test_insert_with_default() {
+    let (_container, client) = setup_postgres().await;
+    create_test_tables(&client).await;
+
+    let source = r#"
+CreateProductWithDefault @insert{
+    params {handle @string}
+    into product
+    values {handle $handle, status @default}
+    returning {id, handle, status}
+}
+"#;
+    let file = parse_query_file(source).unwrap();
+    let insert = &file.inserts[0];
+
+    let generated = dibs_query_gen::generate_insert_sql(insert);
+    tracing::info!("Generated INSERT SQL: {}", generated.sql);
+
+    // Should use DEFAULT keyword
+    assert!(
+        generated.sql.contains("DEFAULT"),
+        "Should use DEFAULT for status"
+    );
+
+    // Execute
+    let handle = "default-product".to_string();
+    let rows: Vec<Row> = client.query(&generated.sql, &[&handle]).await.unwrap();
+
+    assert_eq!(rows.len(), 1);
+    let returned_status: String = rows[0].get("status");
+    assert_eq!(returned_status, "draft", "Should use table's default value");
+}
+
+#[tokio::test]
+async fn test_update_mutation() {
+    let (_container, client) = setup_postgres().await;
+    create_test_tables(&client).await;
+    insert_test_data(&client).await;
+
+    let source = r#"
+UpdateProductStatus @update{
+    params {handle @string, status @string}
+    table product
+    set {status $status}
+    where {handle $handle}
+    returning {id, handle, status}
+}
+"#;
+    let file = parse_query_file(source).unwrap();
+    let update = &file.updates[0];
+
+    let generated = dibs_query_gen::generate_update_sql(update);
+    tracing::info!("Generated UPDATE SQL: {}", generated.sql);
+
+    // Verify SQL structure
+    assert!(
+        generated.sql.contains("UPDATE \"product\""),
+        "Should UPDATE product"
+    );
+    assert!(
+        generated.sql.contains("SET \"status\" = $1"),
+        "Should SET status"
+    );
+    assert!(
+        generated.sql.contains("WHERE \"handle\" = $2"),
+        "Should have WHERE clause"
+    );
+    assert!(
+        generated.sql.contains("RETURNING"),
+        "Should have RETURNING clause"
+    );
+
+    // Execute the update
+    let status = "published".to_string();
+    let handle = "widget".to_string();
+    let rows: Vec<Row> = client
+        .query(&generated.sql, &[&status, &handle])
+        .await
+        .unwrap();
+
+    assert_eq!(rows.len(), 1, "Should return 1 updated row");
+    let returned_status: String = rows[0].get("status");
+    assert_eq!(returned_status, "published", "Status should be updated");
+
+    // Verify in database
+    let verify: Vec<Row> = client
+        .query("SELECT status FROM product WHERE handle = $1", &[&handle])
+        .await
+        .unwrap();
+    let db_status: String = verify[0].get("status");
+    assert_eq!(db_status, "published");
+}
+
+#[tokio::test]
+async fn test_delete_mutation() {
+    let (_container, client) = setup_postgres().await;
+    create_test_tables(&client).await;
+    insert_test_data(&client).await;
+
+    let source = r#"
+DeleteProduct @delete{
+    params {id @int}
+    from product
+    where {id $id}
+    returning {id, handle}
+}
+"#;
+    let file = parse_query_file(source).unwrap();
+    let delete = &file.deletes[0];
+
+    let generated = dibs_query_gen::generate_delete_sql(delete);
+    tracing::info!("Generated DELETE SQL: {}", generated.sql);
+
+    // Verify SQL structure
+    assert!(
+        generated.sql.contains("DELETE FROM \"product\""),
+        "Should DELETE FROM product"
+    );
+    assert!(
+        generated.sql.contains("WHERE \"id\" = $1"),
+        "Should have WHERE clause"
+    );
+    assert!(
+        generated.sql.contains("RETURNING"),
+        "Should have RETURNING clause"
+    );
+
+    // First verify we have 3 products
+    let before: Vec<Row> = client
+        .query("SELECT COUNT(*) FROM product", &[])
+        .await
+        .unwrap();
+    let count_before: i64 = before[0].get(0);
+    assert_eq!(count_before, 3);
+
+    // Delete product with id=3 (gizmo) - has no variants so no FK violation
+    let id: i64 = 3;
+    let rows: Vec<Row> = client.query(&generated.sql, &[&id]).await.unwrap();
+
+    assert_eq!(rows.len(), 1, "Should return 1 deleted row");
+    let returned_handle: String = rows[0].get("handle");
+    assert_eq!(returned_handle, "gizmo", "Should have deleted gizmo");
+
+    // Verify deletion
+    let after: Vec<Row> = client
+        .query("SELECT COUNT(*) FROM product", &[])
+        .await
+        .unwrap();
+    let count_after: i64 = after[0].get(0);
+    assert_eq!(count_after, 2, "Should have 2 products remaining");
+}
+
+#[tokio::test]
+async fn test_upsert_mutation_insert() {
+    let (_container, client) = setup_postgres().await;
+    create_test_tables(&client).await;
+
+    let source = r#"
+UpsertProduct @upsert{
+    params {handle @string, status @string}
+    into product
+    values {handle $handle, status $status}
+    conflict {handle}
+    returning {id, handle, status}
+}
+"#;
+    let file = parse_query_file(source).unwrap();
+    let upsert = &file.upserts[0];
+
+    let generated = dibs_query_gen::generate_upsert_sql(upsert);
+    tracing::info!("Generated UPSERT SQL: {}", generated.sql);
+
+    // Verify SQL structure
+    assert!(
+        generated.sql.contains("INSERT INTO \"product\""),
+        "Should INSERT INTO product"
+    );
+    assert!(
+        generated.sql.contains("ON CONFLICT (\"handle\")"),
+        "Should have ON CONFLICT clause"
+    );
+    assert!(
+        generated.sql.contains("DO UPDATE SET"),
+        "Should have DO UPDATE SET"
+    );
+
+    // First upsert - should insert
+    let handle = "upsert-product".to_string();
+    let status = "draft".to_string();
+    let rows: Vec<Row> = client
+        .query(&generated.sql, &[&handle, &status])
+        .await
+        .unwrap();
+
+    assert_eq!(rows.len(), 1);
+    let returned_status: String = rows[0].get("status");
+    assert_eq!(returned_status, "draft");
+
+    // Verify insert
+    let verify: Vec<Row> = client
+        .query("SELECT status FROM product WHERE handle = $1", &[&handle])
+        .await
+        .unwrap();
+    assert_eq!(verify.len(), 1);
+    let db_status: String = verify[0].get("status");
+    assert_eq!(db_status, "draft");
+}
+
+#[tokio::test]
+async fn test_upsert_mutation_update() {
+    let (_container, client) = setup_postgres().await;
+    create_test_tables(&client).await;
+    insert_test_data(&client).await;
+
+    let source = r#"
+UpsertProduct @upsert{
+    params {handle @string, status @string}
+    into product
+    values {handle $handle, status $status}
+    conflict {handle}
+    returning {id, handle, status}
+}
+"#;
+    let file = parse_query_file(source).unwrap();
+    let upsert = &file.upserts[0];
+
+    let generated = dibs_query_gen::generate_upsert_sql(upsert);
+
+    // Upsert existing product - should update
+    let handle = "widget".to_string(); // exists from test data
+    let status = "archived".to_string();
+    let rows: Vec<Row> = client
+        .query(&generated.sql, &[&handle, &status])
+        .await
+        .unwrap();
+
+    assert_eq!(rows.len(), 1);
+    let returned_status: String = rows[0].get("status");
+    assert_eq!(returned_status, "archived", "Status should be updated");
+
+    // Verify the ID didn't change (it was an update, not insert)
+    let returned_id: i64 = rows[0].get("id");
+    assert_eq!(returned_id, 1, "Should be the same product ID");
+
+    // Verify in database
+    let verify: Vec<Row> = client
+        .query("SELECT status FROM product WHERE handle = $1", &[&handle])
+        .await
+        .unwrap();
+    let db_status: String = verify[0].get("status");
+    assert_eq!(db_status, "archived");
+}
+
+#[tokio::test]
+async fn test_insert_without_returning() {
+    let (_container, client) = setup_postgres().await;
+    create_test_tables(&client).await;
+
+    let source = r#"
+CreateProductNoReturn @insert{
+    params {handle @string, status @string}
+    into product
+    values {handle $handle, status $status}
+}
+"#;
+    let file = parse_query_file(source).unwrap();
+    let insert = &file.inserts[0];
+
+    let generated = dibs_query_gen::generate_insert_sql(insert);
+    tracing::info!("Generated INSERT SQL: {}", generated.sql);
+
+    // Should not have RETURNING clause
+    assert!(
+        !generated.sql.contains("RETURNING"),
+        "Should NOT have RETURNING clause"
+    );
+
+    // Execute - returns no rows
+    let handle = "no-return-product".to_string();
+    let status = "draft".to_string();
+    let rows_affected = client
+        .execute(&generated.sql, &[&handle, &status])
+        .await
+        .unwrap();
+
+    assert_eq!(rows_affected, 1, "Should affect 1 row");
+
+    // Verify it was inserted
+    let verify: Vec<Row> = client
+        .query("SELECT * FROM product WHERE handle = $1", &[&handle])
+        .await
+        .unwrap();
+    assert_eq!(verify.len(), 1);
+}
