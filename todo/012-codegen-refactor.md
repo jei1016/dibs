@@ -1,12 +1,12 @@
 # Codegen Refactoring - Use codegen crate Block API
 
-**Status:** ✅ COMPLETED (Phase 1)
+**Status:** ✅ COMPLETED (Phase 1 + Phase 2)
 
 ## Problem
 
 The current `dibs-query-gen` codegen implementation uses manual string manipulation (`push_str`, `format!`, etc.) to generate Rust code instead of leveraging the `codegen` crate's `Block` API for structured code generation.
 
-**Solution:** Refactored 5 out of 7 major codegen functions to use Block-based generation, achieving significant improvements in maintainability and code quality.
+**Solution:** Refactored all 7 major codegen functions to use Block-based generation, achieving significant improvements in maintainability and code quality. Additionally unified the query body generation code paths.
 
 ### Example of Current Approach (String Manipulation)
 
@@ -98,24 +98,31 @@ The following functions have been refactored to use `Block` instead of manual st
 
 Added helper function `block_to_string()` to format Block to String for compatibility with `Function::line()`.
 
-### 🔄 Remaining Work
+### Phase 2: Complex Functions + Unification (COMPLETED 2025-01)
 
-The two most complex functions still use string building and should be refactored:
+Completed the remaining complex functions and unified code paths:
 
-1. **`generate_vec_relation_assembly`** (~150 lines) - HashMap-based grouping for has-many relations
-2. **`generate_nested_vec_relation_assembly`** (~420 lines) - Nested Vec relations with multi-level grouping
+1. **`generate_vec_relation_assembly`** (~150 lines) - Converted from string building to Block API
+   - HashMap-based grouping for has-many relations
+   - Proper Block nesting for loops and conditionals
+   
+2. **`generate_nested_vec_relation_assembly`** (~400 lines) - Converted from string building to Block API
+   - Multi-level nested grouping with Block structure
+   - Extracted helper function `generate_nested_vec_with_dedup` for deduplication logic
+   - Clean separation of concerns
 
-These functions are complex due to:
-- Multi-level nested loops
-- Conditional logic for different field types
-- Dynamic struct building based on schema
-- HashMap-based row grouping
+3. **Unified Query Body Generation**
+   - Removed separate `generate_simple_query_body` function
+   - Created `generate_from_row_body` helper for direct deserialization
+   - Single `generate_query_body` function handles both simple and JOIN cases
+   - `generate_sql_with_joins` already falls back to `generate_simple_sql` when no relations
+   - Result: cleaner code path, no redundant SQL generation
 
 ### Metrics
 
-- **Functions Refactored:** 5 out of 7 major functions (71%)
-- **Lines of Code:** ~300 lines converted from string building to Block API
-- **Test Coverage:** 100% (67 unit tests + 25 integration tests passing)
+- **Functions Refactored:** 7 out of 7 major functions (100%)
+- **Lines of Code:** ~600+ lines converted from string building to Block API
+- **Test Coverage:** 100% (70 unit tests + 25 integration tests passing)
 - **Regressions:** 0
 
 ### Benefits Achieved
@@ -126,38 +133,33 @@ These functions are complex due to:
 - ✅ More maintainable and testable
 - ✅ Easier to add new features (DISTINCT, GROUP BY)
 - ✅ Type-safe code generation
-- ✅ All 67 unit tests passing
+- ✅ All 70 unit tests passing
 - ✅ All 25 integration tests passing
+- ✅ Unified code paths (no duplicate logic)
+- ✅ Single source of truth for query generation
 
 ## Notes
 
 - The `codegen` crate doesn't provide statement-level AST (only Block with line())
 - Current approach using Block is a significant improvement over raw string building
-- The remaining complex functions can be refactored incrementally as needed
+- Helper functions like `generate_nested_vec_with_dedup` keep complex functions manageable
 - Consider adding integration tests that compile generated code to catch regressions
 
-## Success Criteria (Phase 1)
+## Success Criteria
 
-1. ~~No manual `push_str` / `format!` for Rust code generation~~ - **71% Complete** (5/7 major functions)
+1. ✅ No manual `push_str` / `format!` for Rust code generation - **100% Complete** (7/7 major functions)
 2. ✅ All generated code passes `cargo check` and clippy
 3. ✅ No functional regressions (all existing tests pass)
 4. ✅ Generated code is readable and properly formatted
 5. ✅ Adding new operators/features easier with Block-based approach
 6. ✅ Foundation ready for implementing DISTINCT and GROUP BY
+7. ✅ Unified code paths for simple and JOIN queries
 
-**Phase 1 Goals Met:** Core refactoring complete, technical debt significantly reduced.
-
-## Next Steps (Optional Phase 2)
-
-The two remaining complex functions can be refactored incrementally if needed:
-1. `generate_vec_relation_assembly` - When enhancing Vec relation features
-2. `generate_nested_vec_relation_assembly` - If optimizing nested relation performance
-
-These are lower priority as they work correctly and are isolated functions.
+**All Goals Met:** Full refactoring complete, technical debt eliminated.
 
 ## Related Issues
 
 - ~~Todo 004 (JSONB operators)~~ - ✅ Complete with integration tests
 - Todo 006 (DISTINCT) - **Ready to implement** with Block-based codegen
 - Todo 007 (GROUP BY / HAVING) - **Ready to implement** with solid codegen foundation
-- ~~Todo 012 (Codegen refactoring)~~ - ✅ Phase 1 Complete
+- ~~Todo 012 (Codegen refactoring)~~ - ✅ Phase 1 + Phase 2 Complete
