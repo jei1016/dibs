@@ -276,7 +276,7 @@ impl<'a> QueryPlanner<'a> {
                     join.on_condition.0 = format!(
                         "{}.{}",
                         parent_alias,
-                        join.on_condition.0.split('.').last().unwrap_or("id")
+                        join.on_condition.0.split('.').next_back().unwrap_or("id")
                     );
                     join.filters = filters.clone();
                     join.order_by = order_by.clone();
@@ -312,7 +312,7 @@ impl<'a> QueryPlanner<'a> {
                             Field::Relation { .. } => {
                                 // Recursively process nested relation
                                 self.process_fields(
-                                    &[rel_field.clone()],
+                                    std::slice::from_ref(rel_field),
                                     relation_table,
                                     &relation_alias,
                                     &nested_path,
@@ -583,7 +583,7 @@ impl QueryPlan {
             .on_condition
             .1
             .split('.')
-            .last()
+            .next_back()
             .unwrap_or(&join.on_condition.1);
         let mut where_parts = vec![format!("\"{}\" = {}", fk_col, join.on_condition.0)];
 

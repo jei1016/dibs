@@ -374,10 +374,10 @@ fn convert_upsert(name: &str, u: &schema::Upsert) -> UpsertMutation {
         if !values.iter().any(|(c, _)| c == col) {
             // This column is only in the update clause, add it
             let expr = match update_val {
-                schema::UpdateValue::Now => ValueExpr::Now,
-                schema::UpdateValue::Default => ValueExpr::Default,
-                schema::UpdateValue::Expr(Some(s)) => convert_value_string(s),
-                schema::UpdateValue::Expr(None) => {
+                Some(schema::UpdateValue::Now) => ValueExpr::Now,
+                Some(schema::UpdateValue::Default) => ValueExpr::Default,
+                Some(schema::UpdateValue::Expr(s)) => convert_value_string(s),
+                None => {
                     // Bare column name - use the value from VALUES
                     continue;
                 }
@@ -427,7 +427,14 @@ fn convert_values(values: &schema::Values) -> Vec<(String, ValueExpr)> {
     values
         .columns
         .iter()
-        .map(|(col, expr)| (col.clone(), convert_value_expr(expr)))
+        .map(|(col, expr)| {
+            let value_expr = match expr {
+                Some(e) => convert_value_expr(e),
+                // Bare column name means use param with same name ($column_name)
+                None => ValueExpr::Param(col.clone()),
+            };
+            (col.clone(), value_expr)
+        })
         .collect()
 }
 

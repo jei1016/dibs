@@ -627,7 +627,7 @@ fn generate_nested_vec_relation_assembly(
         }
     }
 
-    body.push_str("\n");
+    body.push('\n');
     body.push_str("for row in rows.iter() {\n");
     body.push_str(&format!(
         "    let parent_id: {} = row.get(\"{}\");\n\n",
@@ -978,10 +978,10 @@ fn generate_nested_vec_relation_assembly(
 /// Get the "id" column from a list of fields, if present.
 fn get_id_column(select: &[Field]) -> Option<String> {
     select.iter().find_map(|f| {
-        if let Field::Column { name, .. } = f {
-            if name == "id" {
-                return Some(name.clone());
-            }
+        if let Field::Column { name, .. } = f
+            && name == "id"
+        {
+            return Some(name.clone());
         }
         None
     })
