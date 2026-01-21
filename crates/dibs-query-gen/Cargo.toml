@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 dibs-query-schema.workspace = true
+dibs-sql = { path = "../dibs-sql" }
 facet.workspace = true
 facet-styx = { workspace = true, features = ["tracing"] }
 styx-tree.workspace = true

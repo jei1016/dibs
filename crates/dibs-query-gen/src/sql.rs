@@ -2,6 +2,10 @@
 
 use crate::ast::*;
 use crate::planner::{PlannerSchema, QueryPlan, QueryPlanner};
+use dibs_sql::{
+    BinOp as SqlBinOp, ConflictAction, DeleteStmt, Expr as SqlExpr, InsertStmt, OnConflict,
+    UpdateAssignment, UpdateStmt, render,
+};
 
 /// Generated SQL with parameter placeholders.
 #[derive(Debug, Clone)]
@@ -311,255 +315,203 @@ fn format_filter(
     (result, param_idx)
 }
 
+/// Convert a ValueExpr to a dibs_sql::Expr.
+fn value_expr_to_sql(expr: &ValueExpr) -> SqlExpr {
+    match expr {
+        ValueExpr::Param(name) => SqlExpr::param(name),
+        ValueExpr::String(s) => SqlExpr::string(s),
+        ValueExpr::Int(n) => SqlExpr::int(*n),
+        ValueExpr::Bool(b) => SqlExpr::bool(*b),
+        ValueExpr::Null => SqlExpr::Null,
+        ValueExpr::Now => SqlExpr::Now,
+        ValueExpr::Default => SqlExpr::Default,
+    }
+}
+
+/// Convert an AST Expr (from filters) to a dibs_sql::Expr.
+fn ast_expr_to_sql(expr: &Expr) -> SqlExpr {
+    match expr {
+        Expr::Param(name) => SqlExpr::param(name),
+        Expr::String(s) => SqlExpr::string(s),
+        Expr::Int(n) => SqlExpr::int(*n),
+        Expr::Bool(b) => SqlExpr::bool(*b),
+        Expr::Null => SqlExpr::Null,
+    }
+}
+
+/// Convert a Filter to a dibs_sql::Expr condition.
+fn filter_to_sql(filter: &Filter) -> SqlExpr {
+    let col = SqlExpr::column(&filter.column);
+
+    match (&filter.op, &filter.value) {
+        (FilterOp::IsNull, _) => col.is_null(),
+        (FilterOp::IsNotNull, _) => col.is_not_null(),
+        (FilterOp::Eq, Expr::Null) => col.is_null(),
+        (FilterOp::Ne, Expr::Null) => col.is_not_null(),
+        (FilterOp::Eq, value) => col.eq(ast_expr_to_sql(value)),
+        (FilterOp::Ne, value) => SqlExpr::BinOp {
+            left: Box::new(col),
+            op: SqlBinOp::Ne,
+            right: Box::new(ast_expr_to_sql(value)),
+        },
+        (FilterOp::Lt, value) => SqlExpr::BinOp {
+            left: Box::new(col),
+            op: SqlBinOp::Lt,
+            right: Box::new(ast_expr_to_sql(value)),
+        },
+        (FilterOp::Lte, value) => SqlExpr::BinOp {
+            left: Box::new(col),
+            op: SqlBinOp::Le,
+            right: Box::new(ast_expr_to_sql(value)),
+        },
+        (FilterOp::Gt, value) => SqlExpr::BinOp {
+            left: Box::new(col),
+            op: SqlBinOp::Gt,
+            right: Box::new(ast_expr_to_sql(value)),
+        },
+        (FilterOp::Gte, value) => SqlExpr::BinOp {
+            left: Box::new(col),
+            op: SqlBinOp::Ge,
+            right: Box::new(ast_expr_to_sql(value)),
+        },
+        (FilterOp::Like, value) => {
+            // Use Raw for LIKE since we don't have a dedicated type
+            SqlExpr::Raw(format!(
+                "\"{}\" LIKE {}",
+                filter.column,
+                match value {
+                    Expr::Param(name) => format!("${}", name),
+                    _ => "?".to_string(),
+                }
+            ))
+        }
+        (FilterOp::ILike, value) => col.ilike(ast_expr_to_sql(value)),
+        (FilterOp::In, value) => {
+            // Use Raw for IN/ANY since we don't have a dedicated type
+            SqlExpr::Raw(format!(
+                "\"{}\" = ANY({})",
+                filter.column,
+                match value {
+                    Expr::Param(name) => format!("${}", name),
+                    _ => "?".to_string(),
+                }
+            ))
+        }
+    }
+}
+
+/// Combine multiple filters with AND.
+fn filters_to_where(filters: &[Filter]) -> Option<SqlExpr> {
+    let mut iter = filters.iter();
+    let first = iter.next()?;
+    let mut result = filter_to_sql(first);
+    for filter in iter {
+        result = result.and(filter_to_sql(filter));
+    }
+    Some(result)
+}
+
 /// Generate SQL for an INSERT mutation.
 pub fn generate_insert_sql(insert: &InsertMutation) -> GeneratedSql {
-    let mut sql = String::new();
-    let mut param_order = Vec::new();
-    let mut param_idx = 1;
+    let mut stmt = InsertStmt::new(&insert.table);
 
-    // INSERT INTO
-    sql.push_str("INSERT INTO \"");
-    sql.push_str(&insert.table);
-    sql.push_str("\" (");
-
-    // Column names
-    let columns: Vec<_> = insert
-        .values
-        .iter()
-        .map(|(col, _)| format!("\"{}\"", col))
-        .collect();
-    sql.push_str(&columns.join(", "));
-    sql.push_str(") VALUES (");
-
-    // Values
-    let values: Vec<_> = insert
-        .values
-        .iter()
-        .map(|(_, expr)| {
-            let (val, new_idx) = format_value_expr(expr, param_idx, &mut param_order);
-            param_idx = new_idx;
-            val
-        })
-        .collect();
-    sql.push_str(&values.join(", "));
-    sql.push(')');
-
-    // RETURNING
-    if !insert.returning.is_empty() {
-        sql.push_str(" RETURNING ");
-        let cols: Vec<_> = insert
-            .returning
-            .iter()
-            .map(|c| format!("\"{}\"", c))
-            .collect();
-        sql.push_str(&cols.join(", "));
+    for (col, expr) in &insert.values {
+        stmt = stmt.column(col, value_expr_to_sql(expr));
     }
 
+    if !insert.returning.is_empty() {
+        stmt = stmt.returning(insert.returning.iter().map(|s| s.as_str()));
+    }
+
+    let rendered = render(&stmt);
     GeneratedSql {
-        sql,
-        param_order,
+        sql: rendered.sql,
+        param_order: rendered.params,
         plan: None,
     }
 }
 
 /// Generate SQL for an UPSERT mutation (INSERT ... ON CONFLICT ... DO UPDATE).
 pub fn generate_upsert_sql(upsert: &UpsertMutation) -> GeneratedSql {
-    let mut sql = String::new();
-    let mut param_order = Vec::new();
-    let mut param_idx = 1;
+    let mut stmt = InsertStmt::new(&upsert.table);
 
-    // INSERT INTO
-    sql.push_str("INSERT INTO \"");
-    sql.push_str(&upsert.table);
-    sql.push_str("\" (");
+    // Add all columns and values
+    for (col, expr) in &upsert.values {
+        stmt = stmt.column(col, value_expr_to_sql(expr));
+    }
 
-    // Column names
-    let columns: Vec<_> = upsert
-        .values
-        .iter()
-        .map(|(col, _)| format!("\"{}\"", col))
-        .collect();
-    sql.push_str(&columns.join(", "));
-    sql.push_str(") VALUES (");
-
-    // Values
-    let values: Vec<_> = upsert
-        .values
-        .iter()
-        .map(|(_, expr)| {
-            let (val, new_idx) = format_value_expr(expr, param_idx, &mut param_order);
-            param_idx = new_idx;
-            val
-        })
-        .collect();
-    sql.push_str(&values.join(", "));
-    sql.push(')');
-
-    // ON CONFLICT
-    sql.push_str(" ON CONFLICT (");
-    let conflict_cols: Vec<_> = upsert
-        .conflict_columns
-        .iter()
-        .map(|c| format!("\"{}\"", c))
-        .collect();
-    sql.push_str(&conflict_cols.join(", "));
-    sql.push_str(") DO UPDATE SET ");
-
-    // SET clause - exclude conflict columns from update
-    let update_sets: Vec<_> = upsert
+    // Build ON CONFLICT clause - update columns that are NOT in conflict_columns
+    let update_assignments: Vec<_> = upsert
         .values
         .iter()
         .filter(|(col, _)| !upsert.conflict_columns.contains(col))
-        .map(|(col, expr)| {
-            let (val, new_idx) = format_value_expr(expr, param_idx, &mut param_order);
-            param_idx = new_idx;
-            format!("\"{}\" = {}", col, val)
-        })
+        .map(|(col, expr)| UpdateAssignment::new(col, value_expr_to_sql(expr)))
         .collect();
-    sql.push_str(&update_sets.join(", "));
 
-    // RETURNING
+    stmt = stmt.on_conflict(OnConflict {
+        columns: upsert.conflict_columns.clone(),
+        action: ConflictAction::DoUpdate(update_assignments),
+    });
+
     if !upsert.returning.is_empty() {
-        sql.push_str(" RETURNING ");
-        let cols: Vec<_> = upsert
-            .returning
-            .iter()
-            .map(|c| format!("\"{}\"", c))
-            .collect();
-        sql.push_str(&cols.join(", "));
+        stmt = stmt.returning(upsert.returning.iter().map(|s| s.as_str()));
     }
 
+    let rendered = render(&stmt);
     GeneratedSql {
-        sql,
-        param_order,
+        sql: rendered.sql,
+        param_order: rendered.params,
         plan: None,
     }
 }
 
 /// Generate SQL for an UPDATE mutation.
 pub fn generate_update_sql(update: &UpdateMutation) -> GeneratedSql {
-    let mut sql = String::new();
-    let mut param_order = Vec::new();
-    let mut param_idx = 1;
-
-    // UPDATE
-    sql.push_str("UPDATE \"");
-    sql.push_str(&update.table);
-    sql.push_str("\" SET ");
+    let mut stmt = UpdateStmt::new(&update.table);
 
     // SET clause
-    let sets: Vec<_> = update
-        .values
-        .iter()
-        .map(|(col, expr)| {
-            let (val, new_idx) = format_value_expr(expr, param_idx, &mut param_order);
-            param_idx = new_idx;
-            format!("\"{}\" = {}", col, val)
-        })
-        .collect();
-    sql.push_str(&sets.join(", "));
+    for (col, expr) in &update.values {
+        stmt = stmt.set(col, value_expr_to_sql(expr));
+    }
 
-    // WHERE
-    if !update.filters.is_empty() {
-        sql.push_str(" WHERE ");
-        let conditions: Vec<_> = update
-            .filters
-            .iter()
-            .map(|f| {
-                let (cond, new_idx) = format_filter(f, param_idx, &mut param_order);
-                param_idx = new_idx;
-                cond
-            })
-            .collect();
-        sql.push_str(&conditions.join(" AND "));
+    // WHERE clause
+    if let Some(where_expr) = filters_to_where(&update.filters) {
+        stmt = stmt.where_(where_expr);
     }
 
     // RETURNING
     if !update.returning.is_empty() {
-        sql.push_str(" RETURNING ");
-        let cols: Vec<_> = update
-            .returning
-            .iter()
-            .map(|c| format!("\"{}\"", c))
-            .collect();
-        sql.push_str(&cols.join(", "));
+        stmt = stmt.returning(update.returning.iter().map(|s| s.as_str()));
     }
 
+    let rendered = render(&stmt);
     GeneratedSql {
-        sql,
-        param_order,
+        sql: rendered.sql,
+        param_order: rendered.params,
         plan: None,
     }
 }
 
 /// Generate SQL for a DELETE mutation.
 pub fn generate_delete_sql(delete: &DeleteMutation) -> GeneratedSql {
-    let mut sql = String::new();
-    let mut param_order = Vec::new();
-    let mut param_idx = 1;
+    let mut stmt = DeleteStmt::new(&delete.table);
 
-    // DELETE FROM
-    sql.push_str("DELETE FROM \"");
-    sql.push_str(&delete.table);
-    sql.push('"');
-
-    // WHERE
-    if !delete.filters.is_empty() {
-        sql.push_str(" WHERE ");
-        let conditions: Vec<_> = delete
-            .filters
-            .iter()
-            .map(|f| {
-                let (cond, new_idx) = format_filter(f, param_idx, &mut param_order);
-                param_idx = new_idx;
-                cond
-            })
-            .collect();
-        sql.push_str(&conditions.join(" AND "));
+    // WHERE clause
+    if let Some(where_expr) = filters_to_where(&delete.filters) {
+        stmt = stmt.where_(where_expr);
     }
 
     // RETURNING
     if !delete.returning.is_empty() {
-        sql.push_str(" RETURNING ");
-        let cols: Vec<_> = delete
-            .returning
-            .iter()
-            .map(|c| format!("\"{}\"", c))
-            .collect();
-        sql.push_str(&cols.join(", "));
+        stmt = stmt.returning(delete.returning.iter().map(|s| s.as_str()));
     }
 
+    let rendered = render(&stmt);
     GeneratedSql {
-        sql,
-        param_order,
+        sql: rendered.sql,
+        param_order: rendered.params,
         plan: None,
     }
-}
-
-/// Format a value expression for INSERT/UPDATE.
-fn format_value_expr(
-    expr: &ValueExpr,
-    mut param_idx: usize,
-    param_order: &mut Vec<String>,
-) -> (String, usize) {
-    let result = match expr {
-        ValueExpr::Param(name) => {
-            param_order.push(name.clone());
-            let s = format!("${}", param_idx);
-            param_idx += 1;
-            s
-        }
-        ValueExpr::String(s) => {
-            let escaped = s.replace('\'', "''");
-            format!("'{}'", escaped)
-        }
-        ValueExpr::Int(n) => n.to_string(),
-        ValueExpr::Bool(b) => b.to_string(),
-        ValueExpr::Null => "NULL".to_string(),
-        ValueExpr::Now => "NOW()".to_string(),
-        ValueExpr::Default => "DEFAULT".to_string(),
-    };
-    (result, param_idx)
 }
 
 #[cfg(test)]
