@@ -395,7 +395,13 @@ fn value_expr_to_sql(expr: &ValueExpr) -> SqlExpr {
         ValueExpr::Int(n) => SqlExpr::int(*n),
         ValueExpr::Bool(b) => SqlExpr::bool(*b),
         ValueExpr::Null => SqlExpr::Null,
-        ValueExpr::Now => SqlExpr::Now,
+        ValueExpr::FunctionCall { name, args } => {
+            let sql_args: Vec<SqlExpr> = args.iter().map(value_expr_to_sql).collect();
+            SqlExpr::FnCall {
+                name: name.to_uppercase(),
+                args: sql_args,
+            }
+        }
         ValueExpr::Default => SqlExpr::Default,
     }
 }

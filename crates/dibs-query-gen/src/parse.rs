@@ -374,9 +374,29 @@ fn convert_upsert(name: &str, u: &schema::Upsert) -> UpsertMutation {
         if !values.iter().any(|(c, _)| c == col) {
             // This column is only in the update clause, add it
             let expr = match update_val {
-                Some(schema::UpdateValue::Now) => ValueExpr::Now,
                 Some(schema::UpdateValue::Default) => ValueExpr::Default,
-                Some(schema::UpdateValue::Expr(s)) => convert_value_string(s),
+                Some(schema::UpdateValue::Other { tag, content }) => {
+                    // Use the same conversion logic as ValueExpr
+                    match (tag.as_ref(), content.as_ref()) {
+                        (None, Some(schema::Payload::Scalar(s))) => convert_value_string(s),
+                        (Some(name), None) => ValueExpr::FunctionCall {
+                            name: name.clone(),
+                            args: vec![],
+                        },
+                        (Some(name), Some(schema::Payload::Seq(args))) => {
+                            let converted_args = args.iter().map(convert_value_expr).collect();
+                            ValueExpr::FunctionCall {
+                                name: name.clone(),
+                                args: converted_args,
+                            }
+                        }
+                        (None, None) => ValueExpr::Null,
+                        (None, Some(schema::Payload::Seq(_))) => {
+                            panic!("Unexpected bare sequence in update value")
+                        }
+                        (Some(_), Some(schema::Payload::Scalar(s))) => convert_value_string(s),
+                    }
+                }
                 None => {
                     // Bare column name - use the value from VALUES
                     continue;
@@ -441,9 +461,35 @@ fn convert_values(values: &schema::Values) -> Vec<(String, ValueExpr)> {
 /// Convert schema ValueExpr to AST ValueExpr.
 fn convert_value_expr(expr: &schema::ValueExpr) -> ValueExpr {
     match expr {
-        schema::ValueExpr::Now => ValueExpr::Now,
         schema::ValueExpr::Default => ValueExpr::Default,
-        schema::ValueExpr::Expr(s) => convert_value_string(s),
+        schema::ValueExpr::Other { tag, content } => {
+            match (tag.as_ref(), content.as_ref()) {
+                // Bare scalar: tag=None, content=Some(Scalar(...))
+                (None, Some(schema::Payload::Scalar(s))) => convert_value_string(s),
+                // Nullary function: tag=Some("name"), content=None
+                (Some(name), None) => ValueExpr::FunctionCall {
+                    name: name.clone(),
+                    args: vec![],
+                },
+                // Function with args: tag=Some("name"), content=Some(Seq(...))
+                (Some(name), Some(schema::Payload::Seq(args))) => {
+                    let converted_args = args.iter().map(convert_value_expr).collect();
+                    ValueExpr::FunctionCall {
+                        name: name.clone(),
+                        args: converted_args,
+                    }
+                }
+                // Edge cases
+                (None, None) => ValueExpr::Null,
+                (None, Some(schema::Payload::Seq(_))) => {
+                    panic!("Unexpected bare sequence in value expression")
+                }
+                (Some(_), Some(schema::Payload::Scalar(s))) => {
+                    // Tagged scalar - shouldn't normally occur
+                    convert_value_string(s)
+                }
+            }
+        }
     }
 }
 
@@ -616,7 +662,7 @@ CreateUser @insert{
         );
         assert!(matches!(
             i.values.iter().find(|(c, _)| c == "created_at"),
-            Some((_, ValueExpr::Now))
+            Some((_, ValueExpr::FunctionCall { name, args })) if name == "now" && args.is_empty()
         ));
     }
 

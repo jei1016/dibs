@@ -280,8 +280,13 @@ pub enum ValueExpr {
     Bool(bool),
     /// Null.
     Null,
-    /// Current timestamp (NOW()).
-    Now,
+    /// SQL function call (e.g., NOW(), COALESCE($a, $b), LOWER($x)).
+    FunctionCall {
+        /// Function name (e.g., "now", "coalesce", "lower").
+        name: String,
+        /// Arguments to the function.
+        args: Vec<ValueExpr>,
+    },
     /// Database default.
     Default,
 }
