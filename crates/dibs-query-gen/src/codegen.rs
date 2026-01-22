@@ -6,6 +6,16 @@ use crate::sql::{GeneratedSql, generate_simple_sql, generate_sql_with_joins};
 use codegen::{Block, Function, Scope, Struct};
 use std::collections::HashMap;
 
+/// Helper to generate a row.get() call using column index if available, with a comment.
+fn row_get(column_name: &str, column_order: &HashMap<String, usize>) -> String {
+    if let Some(&idx) = column_order.get(column_name) {
+        format!("row.get({}) /* {} */", idx, column_name)
+    } else {
+        // Fallback to name-based access (shouldn't happen if column_order is complete)
+        format!("row.get(\"{}\")", column_name)
+    }
+}
+
 /// Generated Rust code for a query file.
 #[derive(Debug, Clone)]
 pub struct GeneratedCode {
@@ -415,6 +425,7 @@ fn generate_query_body(ctx: &CodegenContext, query: &Query, struct_name: &str) -
             &query.name,
             query,
             struct_name,
+            &generated.column_order,
         ));
     }
 
@@ -1087,6 +1098,7 @@ fn generate_option_relation_assembly(
     parent_prefix: &str,
     query: &Query,
     struct_name: &str,
+    column_order: &HashMap<String, usize>,
 ) -> String {
     let mut block = Block::new("");
 
@@ -1104,12 +1116,18 @@ fn generate_option_relation_assembly(
                     .column_type(&query.from, name)
                     .unwrap_or_else(|| "String".to_string());
                 map_block.line(format!(
-                    "let {}: {} = row.get(\"{}\");",
-                    name, rust_ty, name
+                    "let {}: {} = {};",
+                    name,
+                    rust_ty,
+                    row_get(name, column_order)
                 ));
             }
             Field::Count { name, .. } => {
-                map_block.line(format!("let {}: i64 = row.get(\"{}\");", name, name));
+                map_block.line(format!(
+                    "let {}: i64 = {};",
+                    name,
+                    row_get(name, column_order)
+                ));
             }
             _ => {}
         }

@@ -16,6 +16,9 @@ pub struct GeneratedSql {
     pub param_order: Vec<String>,
     /// Query plan (if JOINs are involved).
     pub plan: Option<QueryPlan>,
+    /// Column names in SELECT order (for index-based access).
+    /// Maps column names to their index in the result set.
+    pub column_order: std::collections::HashMap<String, usize>,
 }
 
 /// Generate SQL for a simple single-table query (no relations).
@@ -23,6 +26,7 @@ pub fn generate_simple_sql(query: &Query) -> GeneratedSql {
     let mut sql = String::new();
     let mut param_order = Vec::new();
     let mut param_idx = 1;
+    let mut column_order = std::collections::HashMap::new();
 
     // SELECT
     sql.push_str("SELECT ");
@@ -45,15 +49,22 @@ pub fn generate_simple_sql(query: &Query) -> GeneratedSql {
         .select
         .iter()
         .filter_map(|f| match f {
-            Field::Column { name, .. } => Some(format!("\"{}\"", name)),
+            Field::Column { name, .. } => Some(name.clone()),
             _ => None, // Skip relations/aggregates for simple query
         })
         .collect();
 
-    if columns.is_empty() {
+    // Build column_order map
+    for (idx, col_name) in columns.iter().enumerate() {
+        column_order.insert(col_name.clone(), idx);
+    }
+
+    let formatted_columns: Vec<_> = columns.iter().map(|name| format!("\"{}\"", name)).collect();
+
+    if formatted_columns.is_empty() {
         sql.push('*');
     } else {
-        sql.push_str(&columns.join(", "));
+        sql.push_str(&formatted_columns.join(", "));
     }
 
     // FROM
@@ -131,6 +142,7 @@ pub fn generate_simple_sql(query: &Query) -> GeneratedSql {
         sql,
         param_order,
         plan: None,
+        column_order,
     }
 }
 
@@ -159,6 +171,18 @@ pub fn generate_sql_with_joins(
     let mut sql = String::new();
     let mut param_order = Vec::new();
     let mut param_idx = 1;
+    let mut column_order = std::collections::HashMap::new();
+
+    // Build column_order from plan's select_columns and count_subqueries
+    let mut col_idx = 0;
+    for col in &plan.select_columns {
+        column_order.insert(col.result_alias.clone(), col_idx);
+        col_idx += 1;
+    }
+    for count in &plan.count_subqueries {
+        column_order.insert(count.result_alias.clone(), col_idx);
+        col_idx += 1;
+    }
 
     // SELECT with aliased columns
     sql.push_str("SELECT ");
@@ -255,6 +279,7 @@ pub fn generate_sql_with_joins(
         sql,
         param_order,
         plan: Some(plan),
+        column_order,
     })
 }
 
@@ -489,8 +514,13 @@ pub fn generate_insert_sql(insert: &InsertMutation) -> GeneratedSql {
         stmt = stmt.column(col, value_expr_to_sql(expr));
     }
 
+    let mut column_order = std::collections::HashMap::new();
     if !insert.returning.is_empty() {
         stmt = stmt.returning(insert.returning.iter().map(|s| s.as_str()));
+        // Build column_order for RETURNING clause
+        for (idx, col) in insert.returning.iter().enumerate() {
+            column_order.insert(col.clone(), idx);
+        }
     }
 
     let rendered = render(&stmt);
@@ -498,6 +528,7 @@ pub fn generate_insert_sql(insert: &InsertMutation) -> GeneratedSql {
         sql: rendered.sql,
         param_order: rendered.params,
         plan: None,
+        column_order,
     }
 }
 
@@ -523,8 +554,13 @@ pub fn generate_upsert_sql(upsert: &UpsertMutation) -> GeneratedSql {
         action: ConflictAction::DoUpdate(update_assignments),
     });
 
+    let mut column_order = std::collections::HashMap::new();
     if !upsert.returning.is_empty() {
         stmt = stmt.returning(upsert.returning.iter().map(|s| s.as_str()));
+        // Build column_order for RETURNING clause
+        for (idx, col) in upsert.returning.iter().enumerate() {
+            column_order.insert(col.clone(), idx);
+        }
     }
 
     let rendered = render(&stmt);
@@ -532,6 +568,7 @@ pub fn generate_upsert_sql(upsert: &UpsertMutation) -> GeneratedSql {
         sql: rendered.sql,
         param_order: rendered.params,
         plan: None,
+        column_order,
     }
 }
 
@@ -550,8 +587,13 @@ pub fn generate_update_sql(update: &UpdateMutation) -> GeneratedSql {
     }
 
     // RETURNING
+    let mut column_order = std::collections::HashMap::new();
     if !update.returning.is_empty() {
         stmt = stmt.returning(update.returning.iter().map(|s| s.as_str()));
+        // Build column_order for RETURNING clause
+        for (idx, col) in update.returning.iter().enumerate() {
+            column_order.insert(col.clone(), idx);
+        }
     }
 
     let rendered = render(&stmt);
@@ -559,6 +601,7 @@ pub fn generate_update_sql(update: &UpdateMutation) -> GeneratedSql {
         sql: rendered.sql,
         param_order: rendered.params,
         plan: None,
+        column_order,
     }
 }
 
@@ -572,8 +615,13 @@ pub fn generate_delete_sql(delete: &DeleteMutation) -> GeneratedSql {
     }
 
     // RETURNING
+    let mut column_order = std::collections::HashMap::new();
     if !delete.returning.is_empty() {
         stmt = stmt.returning(delete.returning.iter().map(|s| s.as_str()));
+        // Build column_order for RETURNING clause
+        for (idx, col) in delete.returning.iter().enumerate() {
+            column_order.insert(col.clone(), idx);
+        }
     }
 
     let rendered = render(&stmt);
@@ -581,6 +629,7 @@ pub fn generate_delete_sql(delete: &DeleteMutation) -> GeneratedSql {
         sql: rendered.sql,
         param_order: rendered.params,
         plan: None,
+        column_order,
     }
 }
 
