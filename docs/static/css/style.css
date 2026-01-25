@@ -212,6 +212,16 @@ Flow diagram (used in Internals page) is plain HTML:
     color: var(--chat-meta-fg);
 }
 
+/* Interstitial notes between chat bubbles */
+.chat-note {
+    font-size: 0.95rem;
+    color: var(--fg-muted);
+    font-style: italic;
+    margin: 1rem 0;
+    padding-left: 1rem;
+    border-left: 2px solid var(--border);
+}
+
 /* ------------------------------------------------------------
    Flow diagram (pipeline)
    ------------------------------------------------------------ */
