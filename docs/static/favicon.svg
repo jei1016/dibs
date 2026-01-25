@@ -1,4 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="24" fill="#2563eb"/>
-  <path d="M44 36h18c13 0 22 8 22 20v16c0 12-9 20-22 20H44V36zm14 12v32h4c6 0 10-3 10-16s-4-16-10-16h-4z" fill="#fff"/>
+  <rect width="128" height="128" rx="24" fill="#d97706" />
+
+  <!-- Simple bold D -->
+  <path
+        d="M36 28h28c22 0 36 16 36 36s-14 36-36 36H36V28zm20 16v40h8c14 0 20-8 20-20s-6-20-20-20h-8z"
+        fill="#fff"
+    />
 </svg>

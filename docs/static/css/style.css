@@ -156,7 +156,7 @@ Flow diagram (used in Internals page) is plain HTML:
     display: flex;
     flex-direction: column;
     gap: var(--chat-gap);
-    margin: 0.9rem 0 1.25rem;
+    margin: 1.25rem 0 1.5rem;
 }
 
 .bubble {
@@ -230,7 +230,7 @@ Flow diagram (used in Internals page) is plain HTML:
     border: var(--flow-step-border);
     border-radius: var(--flow-step-radius);
     background: var(--flow-step-bg);
-    padding: 0.8rem 0.9rem;
+    padding: 1rem 1.1rem;
 }
 
 .flow-title {
@@ -369,7 +369,7 @@ samp {
 .hero {
     padding: 4.5rem 1.5rem;
     text-align: center;
-    border-bottom: 2px solid var(--border);
+    border-bottom: 1px solid var(--border);
     background: var(--bg);
 }
 
@@ -469,8 +469,8 @@ article h2 {
     font-size: 1.75rem;
     margin: 3rem 0 1.25rem;
     color: var(--fg);
-    border-bottom: 2px solid var(--border);
-    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
     letter-spacing: -0.02em;
     font-weight: 700;
 }
@@ -674,7 +674,7 @@ article a:hover {
 }
 
 .toc li {
-    margin: 0.5rem 0;
+    margin: 0.4rem 0;
 }
 
 .toc ul ul li {
@@ -793,7 +793,7 @@ article hr {
 
 /* Footer */
 footer {
-    border-top: 2px solid var(--border);
+    border-top: 1px solid var(--border);
     padding: 2rem;
     text-align: center;
     color: var(--fg-muted);
