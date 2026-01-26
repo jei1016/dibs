@@ -1,9 +1,9 @@
 [workspace]
 members = [
-    "crates/*",
-    "examples/my-app-workspace/my-app",
-    "examples/my-app-workspace/my-app-db",
-    "examples/my-app-workspace/my-app-queries",
+  "crates/*",
+  "examples/my-app-workspace/my-app",
+  "examples/my-app-workspace/my-app-db",
+  "examples/my-app-workspace/my-app-queries",
 ]
 exclude = ["examples/admin-ui"]
 resolver = "3"
@@ -24,7 +24,7 @@ dockside = { path = "crates/dockside" }
 
 # facet ecosystem
 facet = { git = "https://github.com/facet-rs/facet", branch = "main" }
-facet-args = { git = "https://github.com/facet-rs/facet", branch = "main" }
+figue = { git = "https://github.com/bearcove/figue", branch = "main" }
 facet-core = { git = "https://github.com/facet-rs/facet", branch = "main" }
 facet-json = { git = "https://github.com/facet-rs/facet", branch = "main" }
 facet-reflect = { git = "https://github.com/facet-rs/facet", branch = "main" }
