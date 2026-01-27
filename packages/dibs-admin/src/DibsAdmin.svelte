@@ -1055,7 +1055,7 @@
                                         size={20}
                                         class="table-icon"
                                     />
-                                    {selectedTable}
+                                    {getTableLabel(config, selectedTable ?? "")}
                                 </h2>
                                 <Button onclick={openCreateDialog}>
                                     <PlusIcon size={16} />
@@ -1164,8 +1164,6 @@
         font-size: 1.125rem;
         font-weight: 500;
         color: var(--foreground);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
         display: flex;
         align-items: center;
         gap: 0.5rem;
