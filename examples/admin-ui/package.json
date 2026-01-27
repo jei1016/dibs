@@ -21,6 +21,7 @@
   "dependencies": {
     "@bearcove/dibs-admin": "link:../../packages/dibs-admin",
     "@bearcove/roam-core": "link:../../../roam/typescript/packages/roam-core",
+    "@bearcove/roam-postcard": "link:../../../roam/typescript/packages/roam-postcard",
     "@bearcove/roam-ws": "link:../../../roam/typescript/packages/roam-ws"
   }
 }
