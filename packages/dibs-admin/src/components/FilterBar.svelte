@@ -39,6 +39,10 @@
         IsNull: "IS NULL",
         IsNotNull: "IS NOT NULL",
         In: "IN",
+        JsonGet: "->",
+        JsonGetText: "->>",
+        Contains: "@>",
+        KeyExists: "?",
     };
 
     const needsValue: Set<FilterOp["tag"]> = new Set([

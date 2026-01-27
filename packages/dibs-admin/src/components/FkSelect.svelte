@@ -68,7 +68,10 @@
                         return { value: pkStr, label };
                     });
                 } else {
-                    error = result.error.value;
+                    error =
+                        result.error.tag === "MigrationFailed"
+                            ? result.error.value.message
+                            : result.error.value;
                 }
                 loading = false;
             })

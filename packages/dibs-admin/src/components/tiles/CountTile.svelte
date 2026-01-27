@@ -49,7 +49,10 @@
             if (result.ok) {
                 count = result.value.total ?? BigInt(result.value.rows.length);
             } else {
-                error = result.error.value;
+                error =
+                    result.error.tag === "MigrationFailed"
+                        ? result.error.value.message
+                        : result.error.value;
             }
         } catch (e) {
             error = e instanceof Error ? e.message : String(e);

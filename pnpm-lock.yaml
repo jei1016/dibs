@@ -18,7 +18,7 @@ importers:
   packages/dibs-admin:
     dependencies:
       '@bearcove/squel-service':
-        specifier: workspace:*
+        specifier: file:../squel-service
         version: link:../squel-service
       '@codemirror/commands':
         specifier: ^6.8.1

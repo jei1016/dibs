@@ -39,7 +39,10 @@
             if (result.ok) {
                 previewRow = result.value;
             } else {
-                previewError = result.error.value;
+                previewError =
+                    result.error.tag === "MigrationFailed"
+                        ? result.error.value.message
+                        : result.error.value;
             }
         } catch (e) {
             previewError = e instanceof Error ? e.message : String(e);

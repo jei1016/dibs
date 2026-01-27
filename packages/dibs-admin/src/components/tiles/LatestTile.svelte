@@ -93,7 +93,10 @@
             if (result.ok) {
                 rows = result.value.rows;
             } else {
-                error = result.error.value;
+                error =
+                    result.error.tag === "MigrationFailed"
+                        ? result.error.value.message
+                        : result.error.value;
             }
         } catch (e) {
             error = e instanceof Error ? e.message : String(e);

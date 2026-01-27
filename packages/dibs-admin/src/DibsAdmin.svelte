@@ -12,6 +12,7 @@
         Sort,
         Value,
         ListRequest,
+        DibsError,
     } from "./types.js";
     import type { DibsAdminConfig } from "./types/config.js";
     import TableList from "./components/TableList.svelte";
@@ -648,7 +649,10 @@
         return { tag: "String", value: str };
     }
 
-    function formatError(err: { tag: string; value: string }): string {
+    function formatError(err: DibsError): string {
+        if (err.tag === "MigrationFailed") {
+            return `${err.tag}: ${err.value.message}`;
+        }
         return `${err.tag}: ${err.value}`;
     }
 
