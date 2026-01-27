@@ -95,6 +95,18 @@
     // Track pending changes (field name -> new string value)
     let pendingChanges = $state<Map<string, string>>(new Map());
 
+    // Track collapsed field groups
+    let collapsedGroups = $state<Set<string>>(new Set());
+
+    function toggleGroup(groupId: string) {
+        if (collapsedGroups.has(groupId)) {
+            collapsedGroups.delete(groupId);
+        } else {
+            collapsedGroups.add(groupId);
+        }
+        collapsedGroups = new Set(collapsedGroups);
+    }
+
     // Confirmation dialog state
     let showConfirmDialog = $state(false);
     let saving = $state(false);
@@ -500,84 +512,100 @@
                 {:else}
                     <!-- Field group -->
                     {@const group = item}
-                    <details class="field-group" open={!group.collapsed}>
-                        <summary class="group-title">
+                    {@const groupId = `group-${group.title.replace(/\s+/g, "-").toLowerCase()}`}
+                    <div class="field-group" class:collapsed={collapsedGroups.has(groupId)}>
+                        <button
+                            type="button"
+                            class="group-title"
+                            onclick={() => toggleGroup(groupId)}
+                        >
+                            <span class="group-caret"
+                                >{collapsedGroups.has(groupId) ? "▸" : "▾"}</span
+                            >
                             {group.title}
-                        </summary>
-                        <div class="group-fields">
-                            {#each group.fields as fieldName}
-                                {@const col = columns.find((c) => c.name === fieldName)}
-                                {#if col}
-                                    {@const controlType = getControlType(col)}
-                                    {@const inlineType = mapControlTypeToInlineType(controlType)}
-                                    {@const readOnly = isColumnReadOnly(col)}
-                                    {@const fkInfo = getFkInfo(col)}
-                                    {@const fieldIcon = resolveFieldIcon(col, table, schema)}
-                                    {@const fieldValue = getFieldValue(col.name)}
-                                    {@const isModified = pendingChanges.has(col.name)}
+                        </button>
+                        <div class="group-content">
+                            <div class="group-fields">
+                                {#each group.fields as fieldName}
+                                    {@const col = columns.find((c) => c.name === fieldName)}
+                                    {#if col}
+                                        {@const controlType = getControlType(col)}
+                                        {@const inlineType =
+                                            mapControlTypeToInlineType(controlType)}
+                                        {@const readOnly = isColumnReadOnly(col)}
+                                        {@const fkInfo = getFkInfo(col)}
+                                        {@const fieldIcon = resolveFieldIcon(col, table, schema)}
+                                        {@const fieldValue = getFieldValue(col.name)}
+                                        {@const isModified = pendingChanges.has(col.name)}
 
-                                    {#if inlineType === "boolean"}
-                                        <label
-                                            class="field field-boolean"
-                                            class:modified={isModified}
-                                        >
-                                            <InlineField
-                                                value={fieldValue}
-                                                type="boolean"
-                                                {readOnly}
-                                                onchange={(v) => handleFieldChange(col.name, v)}
-                                            />
-                                            <span
-                                                class="boolean-text"
-                                                class:modified-label={isModified}
-                                                >{col.doc || col.name}</span
+                                        {#if inlineType === "boolean"}
+                                            <label
+                                                class="field field-boolean"
+                                                class:modified={isModified}
                                             >
-                                        </label>
-                                    {:else}
-                                        <div class="field" class:modified={isModified}>
-                                            <div class="field-label">
-                                                {#if fieldIcon.type === "custom"}
-                                                    <DynamicIcon
-                                                        name={fieldIcon.name}
-                                                        size={14}
-                                                        class="field-icon"
-                                                    />
-                                                {:else}
-                                                    <fieldIcon.Icon size={14} class="field-icon" />
-                                                {/if}
-                                                <Label class={isModified ? "modified-label" : ""}>
-                                                    {col.doc || col.name}
-                                                </Label>
+                                                <InlineField
+                                                    value={fieldValue}
+                                                    type="boolean"
+                                                    {readOnly}
+                                                    onchange={(v) => handleFieldChange(col.name, v)}
+                                                />
+                                                <span
+                                                    class="boolean-text"
+                                                    class:modified-label={isModified}
+                                                    >{col.doc || col.name}</span
+                                                >
+                                            </label>
+                                        {:else}
+                                            <div class="field" class:modified={isModified}>
+                                                <div class="field-label">
+                                                    {#if fieldIcon.type === "custom"}
+                                                        <DynamicIcon
+                                                            name={fieldIcon.name}
+                                                            size={14}
+                                                            class="field-icon"
+                                                        />
+                                                    {:else}
+                                                        <fieldIcon.Icon
+                                                            size={14}
+                                                            class="field-icon"
+                                                        />
+                                                    {/if}
+                                                    <Label
+                                                        class={isModified ? "modified-label" : ""}
+                                                    >
+                                                        {col.doc || col.name}
+                                                    </Label>
+                                                </div>
+                                                <div class="field-value">
+                                                    {#if fkInfo && !readOnly}
+                                                        <FkSelect
+                                                            value={fieldValue}
+                                                            fkTable={fkInfo.fkTable}
+                                                            {client}
+                                                            disabled={readOnly}
+                                                            onchange={(v) =>
+                                                                handleFieldChange(col.name, v)}
+                                                        />
+                                                    {:else}
+                                                        <InlineField
+                                                            value={fieldValue}
+                                                            type={inlineType}
+                                                            {readOnly}
+                                                            placeholder={col.nullable ? "null" : ""}
+                                                            enumOptions={col.enum_variants}
+                                                            lang={col.lang}
+                                                            onchange={(v) =>
+                                                                handleFieldChange(col.name, v)}
+                                                        />
+                                                    {/if}
+                                                </div>
                                             </div>
-                                            <div class="field-value">
-                                                {#if fkInfo && !readOnly}
-                                                    <FkSelect
-                                                        value={fieldValue}
-                                                        fkTable={fkInfo.fkTable}
-                                                        {client}
-                                                        disabled={readOnly}
-                                                        onchange={(v) =>
-                                                            handleFieldChange(col.name, v)}
-                                                    />
-                                                {:else}
-                                                    <InlineField
-                                                        value={fieldValue}
-                                                        type={inlineType}
-                                                        {readOnly}
-                                                        placeholder={col.nullable ? "null" : ""}
-                                                        enumOptions={col.enum_variants}
-                                                        lang={col.lang}
-                                                        onchange={(v) =>
-                                                            handleFieldChange(col.name, v)}
-                                                    />
-                                                {/if}
-                                            </div>
-                                        </div>
+                                        {/if}
                                     {/if}
-                                {/if}
-                            {/each}
+                                {/each}
+                            </div>
                         </div>
-                    </details>
+                    </div>
                 {/if}
             {/each}
         </div>
@@ -779,21 +807,64 @@
     /* Field groups (collapsible sections) */
     .field-group {
         margin-bottom: 1rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 0 1rem 1rem 1rem;
+        transition:
+            border-color 0.2s,
+            padding 0.2s;
+    }
+
+    .field-group.collapsed {
+        padding-bottom: 0;
+        border-color: transparent;
     }
 
     .group-title {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
         cursor: pointer;
         font-size: 0.7rem;
         font-weight: 600;
         color: var(--muted-foreground);
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        padding: 0.25rem 0;
-        margin-bottom: 0.75rem;
+        padding: 0.125rem 0.5rem;
+        margin: 0 -0.5rem;
+        width: fit-content;
+        background-color: var(--background);
+        position: relative;
+        top: -0.5em;
+        border: none;
+        font-family: inherit;
+    }
+
+    .field-group.collapsed .group-title {
+        background-color: transparent;
+        top: 0;
+        padding: 0.5rem 0;
+        margin: 0;
+    }
+
+    .group-caret {
+        font-size: 0.6rem;
+        width: 0.75rem;
+        text-align: center;
+    }
+
+    .group-content {
+        display: grid;
+        grid-template-rows: 1fr;
+        transition: grid-template-rows 0.2s ease-out;
+    }
+
+    .field-group.collapsed .group-content {
+        grid-template-rows: 0fr;
     }
 
     .group-fields {
-        /* Fields inside groups use same .field class */
+        overflow: hidden;
     }
 
     .related-section {

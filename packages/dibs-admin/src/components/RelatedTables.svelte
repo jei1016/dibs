@@ -29,13 +29,13 @@
 
     let { currentTable, currentRow, schema, client, onNavigate }: Props = $props();
 
-    // Track which relations are expanded
-    let expandedRelations = $state<Set<string>>(new Set());
+    // Track which relations are collapsed (default is expanded)
+    let collapsedRelations = $state<Set<string>>(new Set());
 
     // Track loaded data for each relation
-    let relationData = $state<Map<string, { rows: Row[]; total: bigint | null; loading: boolean }>>(
-        new Map(),
-    );
+    let relationData = $state<
+        Map<string, { rows: Row[]; total: bigint | null; loading: boolean; loadingMore: boolean }>
+    >(new Map());
 
     // FK lookup cache for resolving foreign key display values
     let fkLookup = $state<Map<string, Map<string, Row>>>(new Map());
@@ -93,20 +93,29 @@
         return table.columns[0]?.name ?? "id";
     }
 
-    // Toggle a relation's expanded state
-    async function toggleRelation(relation: IncomingRelation) {
+    // Preload all relations on mount
+    $effect(() => {
+        // Re-run when currentRow changes (viewing a different record)
+        const _rowId = getPkValue();
+
+        for (const relation of incomingRelations) {
+            const key = `${relation.table.name}:${relation.fkColumns.join(",")}`;
+            if (!relationData.has(key)) {
+                loadRelationData(relation, key);
+            }
+        }
+    });
+
+    // Toggle a relation's collapsed state
+    function toggleRelation(relation: IncomingRelation) {
         const key = `${relation.table.name}:${relation.fkColumns.join(",")}`;
 
-        if (expandedRelations.has(key)) {
-            expandedRelations.delete(key);
-            expandedRelations = new Set(expandedRelations);
+        if (collapsedRelations.has(key)) {
+            collapsedRelations.delete(key);
+            collapsedRelations = new Set(collapsedRelations);
         } else {
-            expandedRelations.add(key);
-            expandedRelations = new Set(expandedRelations);
-
-            if (!relationData.has(key)) {
-                await loadRelationData(relation, key);
-            }
+            collapsedRelations.add(key);
+            collapsedRelations = new Set(collapsedRelations);
         }
     }
 
@@ -226,12 +235,14 @@
         return { tag: "String", value: str };
     }
 
+    const PAGE_SIZE = 10;
+
     // Load data for a relation
     async function loadRelationData(relation: IncomingRelation, key: string) {
         const pkValue = getPkValue();
         if (!pkValue) return;
 
-        relationData.set(key, { rows: [], total: null, loading: true });
+        relationData.set(key, { rows: [], total: null, loading: true, loadingMore: false });
         relationData = new Map(relationData);
 
         try {
@@ -246,7 +257,7 @@
                 table: relation.table.name,
                 filters,
                 sort: [],
-                limit: 10,
+                limit: PAGE_SIZE,
                 offset: 0,
                 select: [],
             });
@@ -256,17 +267,73 @@
                     rows: result.value.rows,
                     total: result.value.total,
                     loading: false,
+                    loadingMore: false,
                 });
                 relationData = new Map(relationData);
 
                 await loadFkDisplayValues(result.value.rows, relation);
             } else {
-                relationData.set(key, { rows: [], total: null, loading: false });
+                relationData.set(key, {
+                    rows: [],
+                    total: null,
+                    loading: false,
+                    loadingMore: false,
+                });
                 relationData = new Map(relationData);
             }
         } catch (e) {
             console.error("Failed to load relation data:", e);
-            relationData.set(key, { rows: [], total: null, loading: false });
+            relationData.set(key, { rows: [], total: null, loading: false, loadingMore: false });
+            relationData = new Map(relationData);
+        }
+    }
+
+    // Load more rows for a relation
+    async function loadMore(relation: IncomingRelation, key: string) {
+        const pkValue = getPkValue();
+        if (!pkValue) return;
+
+        const existing = relationData.get(key);
+        if (!existing || existing.loadingMore) return;
+
+        relationData.set(key, { ...existing, loadingMore: true });
+        relationData = new Map(relationData);
+
+        try {
+            const filters: Filter[] = relation.fkColumns.map((col, i) => ({
+                field: col,
+                op: { tag: "Eq" as const },
+                value: pkValue,
+                values: [],
+            }));
+
+            const result = await client.list({
+                table: relation.table.name,
+                filters,
+                sort: [],
+                limit: PAGE_SIZE,
+                offset: existing.rows.length,
+                select: [],
+            });
+
+            if (result.ok) {
+                const newRows = [...existing.rows, ...result.value.rows];
+                relationData.set(key, {
+                    rows: newRows,
+                    total: result.value.total,
+                    loading: false,
+                    loadingMore: false,
+                });
+                relationData = new Map(relationData);
+
+                await loadFkDisplayValues(result.value.rows, relation);
+            } else {
+                relationData.set(key, { ...existing, loadingMore: false });
+                relationData = new Map(relationData);
+            }
+        } catch (e) {
+            console.error("Failed to load more relation data:", e);
+            relationData.set(key, { ...existing, loadingMore: false });
             relationData = new Map(relationData);
         }
     }
@@ -408,8 +475,10 @@
 
         {#each incomingRelations as relation}
             {@const key = `${relation.table.name}:${relation.fkColumns.join(",")}`}
-            {@const isExpanded = expandedRelations.has(key)}
+            {@const isExpanded = !collapsedRelations.has(key)}
             {@const data = relationData.get(key)}
+            {@const remainingCount =
+                data && data.total !== null ? data.total - BigInt(data.rows.length) : 0n}
 
             <div class="relation-card">
                 <button class="relation-header" onclick={() => toggleRelation(relation)}>
@@ -457,10 +526,18 @@
                                     </button>
                                 {/each}
 
-                                {#if data.total !== null && data.total > 10n}
-                                    <div class="more-indicator">
-                                        +{(data.total - 10n).toString()} more
-                                    </div>
+                                {#if remainingCount > 0n}
+                                    <button
+                                        class="load-more-button"
+                                        onclick={() => loadMore(relation, key)}
+                                        disabled={data.loadingMore}
+                                    >
+                                        {#if data.loadingMore}
+                                            Loading...
+                                        {:else}
+                                            Load more ({remainingCount.toString()} remaining)
+                                        {/if}
+                                    </button>
                                 {/if}
                             </div>
                         {:else if data}
@@ -593,9 +670,28 @@
         white-space: nowrap;
     }
 
-    .more-indicator {
-        padding: 0.375rem 0.75rem;
+    .load-more-button {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
         font-size: 0.75rem;
         color: var(--muted-foreground);
+        background: none;
+        border: none;
+        cursor: pointer;
+        text-align: center;
+        font: inherit;
+        transition:
+            background-color 0.15s,
+            color 0.15s;
+    }
+
+    .load-more-button:hover:not(:disabled) {
+        background-color: color-mix(in oklch, var(--accent) 30%, transparent);
+        color: var(--foreground);
+    }
+
+    .load-more-button:disabled {
+        cursor: default;
+        opacity: 0.6;
     }
 </style>
