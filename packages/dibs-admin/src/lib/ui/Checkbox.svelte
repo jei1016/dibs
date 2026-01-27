@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Checkbox as CheckboxPrimitive } from "bits-ui";
-    import { Check, Minus } from "phosphor-svelte";
+    import CheckIcon from "phosphor-svelte/lib/CheckIcon";
+    import MinusIcon from "phosphor-svelte/lib/MinusIcon";
 
     interface Props {
         id?: string;

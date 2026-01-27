@@ -1,12 +1,10 @@
 <script lang="ts">
-    import {
-        Trash,
-        ArrowSquareOut,
-        Asterisk,
-        ArrowLeft,
-        Info,
-        ArrowCounterClockwise,
-    } from "phosphor-svelte";
+    import TrashIcon from "phosphor-svelte/lib/TrashIcon";
+    import ArrowSquareOutIcon from "phosphor-svelte/lib/ArrowSquareOutIcon";
+    import AsteriskIcon from "phosphor-svelte/lib/AsteriskIcon";
+    import ArrowLeftIcon from "phosphor-svelte/lib/ArrowLeftIcon";
+    import InfoIcon from "phosphor-svelte/lib/InfoIcon";
+    import ArrowCounterClockwiseIcon from "phosphor-svelte/lib/ArrowCounterClockwiseIcon";
     import type {
         Row,
         RowField,
@@ -15,7 +13,7 @@
         TableInfo,
         SchemaInfo,
         SquelClient,
-    } from "../types";
+    } from "@bearcove/dibs-admin/types";
     import {
         Button,
         Input,
@@ -27,8 +25,8 @@
         Dialog,
         Select,
         Tooltip,
-    } from "../lib/ui/index";
-    import { getFkForColumn, getTableByName } from "../lib/fk-utils";
+    } from "@bearcove/dibs-admin/lib/ui";
+    import { getFkForColumn, getTableByName } from "@bearcove/dibs-admin/lib/fk-utils";
     import FkSelect from "./FkSelect.svelte";
     import DynamicIcon from "./DynamicIcon.svelte";
     import CodeMirrorEditor from "./CodeMirrorEditor.svelte";
@@ -365,7 +363,7 @@
                     {/if}
                     <Label for={col.name}>{col.doc || col.name}</Label>
                     {#if required}
-                        <Asterisk size={10} class="required-indicator" weight="bold" />
+                        <AsteriskIcon size={10} class="required-indicator" weight="bold" />
                     {/if}
                     {#if dirty}
                         <span class="modified-indicator">modified</span>
@@ -375,7 +373,7 @@
                             onclick={() => revertField(col.name)}
                             title="Revert to original value"
                         >
-                            <ArrowCounterClockwise size={12} />
+                            <ArrowCounterClockwiseIcon size={12} />
                         </button>
                     {/if}
                     <Tooltip.Root>
@@ -386,7 +384,7 @@
                                     unknown
                                 >}
                                 <span {...restProps} class="info-trigger" tabindex={-1}>
-                                    <Info size={12} />
+                                    <InfoIcon size={12} />
                                 </span>
                             {/snippet}
                         </Tooltip.Trigger>
@@ -427,7 +425,7 @@
                                 />
                             </div>
                             <span class="fk-indicator">
-                                <ArrowSquareOut size={12} />
+                                <ArrowSquareOutIcon size={12} />
                                 {fkInfo.fkTable.name}
                             </span>
                         </div>
@@ -502,7 +500,7 @@
     {#if row && onDelete}
         <div class="footer-left">
             <Button variant="destructive" onclick={handleDelete} disabled={deleting}>
-                <Trash size={16} />
+                <TrashIcon size={16} />
                 {deleting ? "Deleting..." : "Delete"}
             </Button>
         </div>
@@ -546,7 +544,7 @@
         <!-- Header with back button -->
         <header class="panel-header">
             <Button variant="ghost" size="icon" onclick={onClose}>
-                <ArrowLeft size={20} />
+                <ArrowLeftIcon size={20} />
             </Button>
             <div>
                 <h1 class="panel-title">

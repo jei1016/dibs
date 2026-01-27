@@ -1,12 +1,12 @@
 <script lang="ts">
-    import {
-        TrashIcon,
-        ArrowLeftIcon,
-        FloppyDiskIcon,
-        ArrowCounterClockwiseIcon,
-        AsteriskIcon,
-        InfoIcon,
-    } from "phosphor-svelte";
+    import TrashIcon from "phosphor-svelte/lib/TrashIcon";
+    import ArrowLeftIcon from "phosphor-svelte/lib/ArrowLeftIcon";
+    import FloppyDiskIcon from "phosphor-svelte/lib/FloppyDiskIcon";
+    import ArrowCounterClockwiseIcon from "phosphor-svelte/lib/ArrowCounterClockwiseIcon";
+    import AsteriskIcon from "phosphor-svelte/lib/AsteriskIcon";
+    import InfoIcon from "phosphor-svelte/lib/InfoIcon";
+    import CaretRightIcon from "phosphor-svelte/lib/CaretRightIcon";
+    import CaretDownIcon from "phosphor-svelte/lib/CaretDownIcon";
     import type {
         Row,
         RowField,
@@ -15,18 +15,22 @@
         TableInfo,
         SchemaInfo,
         SquelClient,
-    } from "../types";
-    import type { DibsAdminConfig, DetailConfig, FieldGroupConfig } from "../types/config";
-    import { Button, Label, Tooltip } from "../lib/ui/index";
+    } from "@bearcove/dibs-admin/types";
+    import type {
+        DibsAdminConfig,
+        DetailConfig,
+        FieldGroupConfig,
+    } from "@bearcove/dibs-admin/types/config";
+    import { Button, Label, Tooltip } from "@bearcove/dibs-admin/lib/ui";
     import {
         getDetailConfig,
         isFieldReadOnly,
         isFieldHidden,
         shouldShowRelations,
         getTableLabel,
-    } from "../lib/config";
-    import { getFkForColumn, getTableByName } from "../lib/fk-utils";
-    import { resolveFieldIcon, type ResolvedIcon } from "../lib/icons";
+    } from "@bearcove/dibs-admin/lib/config";
+    import { getFkForColumn, getTableByName } from "@bearcove/dibs-admin/lib/fk-utils";
+    import { resolveFieldIcon, type ResolvedIcon } from "@bearcove/dibs-admin/lib/icons";
     import InlineField from "./InlineField.svelte";
     import FkSelect from "./FkSelect.svelte";
     import DynamicIcon from "./DynamicIcon.svelte";
@@ -519,9 +523,13 @@
                             class="group-title"
                             onclick={() => toggleGroup(groupId)}
                         >
-                            <span class="group-caret"
-                                >{collapsedGroups.has(groupId) ? "▸" : "▾"}</span
-                            >
+                            <span class="group-caret">
+                                {#if collapsedGroups.has(groupId)}
+                                    <CaretRightIcon size={12} />
+                                {:else}
+                                    <CaretDownIcon size={12} />
+                                {/if}
+                            </span>
                             {group.title}
                         </button>
                         <div class="group-content">
@@ -806,51 +814,53 @@
 
     /* Field groups (collapsible sections) */
     .field-group {
-        margin-bottom: 1rem;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
-        padding: 0 1rem 1rem 1rem;
-        transition:
-            border-color 0.2s,
-            padding 0.2s;
+        margin-top: 1.5rem;
     }
 
-    .field-group.collapsed {
-        padding-bottom: 0;
-        border-color: transparent;
+    .field-group:first-child {
+        margin-top: 0;
     }
 
     .group-title {
         display: flex;
         align-items: center;
-        gap: 0.25rem;
+        gap: 0.5rem;
         cursor: pointer;
-        font-size: 0.7rem;
+        font-size: 0.8125rem;
         font-weight: 600;
-        color: var(--muted-foreground);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        padding: 0.125rem 0.5rem;
-        margin: 0 -0.5rem;
-        width: fit-content;
-        background-color: var(--background);
-        position: relative;
-        top: -0.5em;
+        color: var(--foreground);
+        padding: 0.5rem 0;
         border: none;
+        background: none;
         font-family: inherit;
+        width: 100%;
+        text-align: left;
     }
 
-    .field-group.collapsed .group-title {
-        background-color: transparent;
-        top: 0;
-        padding: 0.5rem 0;
-        margin: 0;
+    .group-title:hover {
+        color: var(--foreground);
+    }
+
+    .group-title:focus {
+        outline: none;
+    }
+
+    .group-title:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+        border-radius: var(--radius);
     }
 
     .group-caret {
-        font-size: 0.6rem;
-        width: 0.75rem;
-        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted-foreground);
+        transition: transform 0.2s;
+    }
+
+    .field-group.collapsed .group-caret {
+        transform: rotate(0deg);
     }
 
     .group-content {
@@ -865,6 +875,7 @@
 
     .group-fields {
         overflow: hidden;
+        padding-top: 0.5rem;
     }
 
     .related-section {

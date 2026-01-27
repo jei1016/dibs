@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { ArrowRight } from "phosphor-svelte";
-    import type { QuickLinksTile } from "../../types/config";
-    import { Card } from "../../lib/ui/index";
+    import ArrowRightIcon from "phosphor-svelte/lib/ArrowRightIcon";
+    import type { QuickLinksTile } from "@bearcove/dibs-admin/types/config";
+    import { Card } from "@bearcove/dibs-admin/lib/ui";
 
     interface Props {
         config: QuickLinksTile;

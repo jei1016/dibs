@@ -15,6 +15,11 @@
     "declarationMap": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "paths": {
+      "@bearcove/dibs-admin": ["./src/index.ts"],
+      "@bearcove/dibs-admin/*": ["./src/*"],
+    },
   },
   "include": ["src/**/*"],
 }

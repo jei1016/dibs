@@ -1,6 +1,7 @@
 <script lang="ts">
-    import { CaretLeft, CaretRight } from "phosphor-svelte";
-    import { Button } from "../lib/ui/index";
+    import CaretLeftIcon from "phosphor-svelte/lib/CaretLeftIcon";
+    import CaretRightIcon from "phosphor-svelte/lib/CaretRightIcon";
+    import { Button } from "@bearcove/dibs-admin/lib/ui";
 
     interface Props {
         offset: number;

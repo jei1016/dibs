@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { ArrowSquareOut } from "phosphor-svelte";
-    import type { Row, TableInfo, Value } from "../types";
-    import { formatValueForDisplay, getDisplayColumn } from "../lib/fk-utils";
+    import ArrowSquareOutIcon from "phosphor-svelte/lib/ArrowSquareOutIcon";
+    import type { Row, TableInfo, Value } from "@bearcove/dibs-admin/types";
+    import { formatValueForDisplay, getDisplayColumn } from "@bearcove/dibs-admin/lib/fk-utils";
 
     interface Props {
         row: Row | null;

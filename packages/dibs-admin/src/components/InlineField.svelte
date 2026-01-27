@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Input, Checkbox, Textarea, Select, DatetimeInput } from "../lib/ui/index";
+    import { Input, Checkbox, Textarea, Select, DatetimeInput } from "@bearcove/dibs-admin/lib/ui";
     import CodeMirrorEditor from "./CodeMirrorEditor.svelte";
 
     type FieldType =

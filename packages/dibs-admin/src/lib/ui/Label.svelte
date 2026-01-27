@@ -21,10 +21,4 @@
         line-height: 1.2;
         color: var(--muted-foreground);
     }
-
-    .label:has(+ :disabled),
-    .label:has(+ *:disabled) {
-        cursor: not-allowed;
-        opacity: 0.7;
-    }
 </style>

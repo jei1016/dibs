@@ -26,6 +26,7 @@
             outline 0.15s;
         /* Hide spin buttons */
         -moz-appearance: textfield;
+        appearance: textfield;
     }
 
     .number-input::-webkit-outer-spin-button,

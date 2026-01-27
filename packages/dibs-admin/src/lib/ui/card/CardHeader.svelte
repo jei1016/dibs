@@ -22,7 +22,7 @@
     }
 
     /* When followed by content, reduce bottom padding */
-    .card-header:has(+ .card-content) {
+    .card-header:has(+ :global(.card-content)) {
         padding-bottom: 0.75rem;
     }
 </style>

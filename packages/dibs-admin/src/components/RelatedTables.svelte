@@ -1,6 +1,14 @@
 <script lang="ts">
-    import type { TableInfo, SchemaInfo, Row, Filter, Value, SquelClient } from "../types";
-    import { CaretDown, CaretRight, Table as TableIcon } from "phosphor-svelte";
+    import type {
+        TableInfo,
+        SchemaInfo,
+        Row,
+        Filter,
+        Value,
+        SquelClient,
+    } from "@bearcove/dibs-admin/types";
+    import CaretDownIcon from "phosphor-svelte/lib/CaretDownIcon";
+    import CaretRightIcon from "phosphor-svelte/lib/CaretRightIcon";
     import DynamicIcon from "./DynamicIcon.svelte";
 
     interface IncomingRelation {
@@ -470,84 +478,91 @@
 </script>
 
 {#if incomingRelations.length > 0}
-    <div class="related-tables">
-        <h3 class="section-title">Related Records</h3>
+    {@const relationsWithData = incomingRelations.filter((r) => {
+        const key = `${r.table.name}:${r.fkColumns.join(",")}`;
+        const data = relationData.get(key);
+        return !data || data.loading || (data.total !== null && data.total > 0n);
+    })}
+    {#if relationsWithData.length > 0}
+        <div class="related-tables">
+            <h3 class="section-title">Related Records</h3>
 
-        {#each incomingRelations as relation}
-            {@const key = `${relation.table.name}:${relation.fkColumns.join(",")}`}
-            {@const isExpanded = !collapsedRelations.has(key)}
-            {@const data = relationData.get(key)}
-            {@const remainingCount =
-                data && data.total !== null ? data.total - BigInt(data.rows.length) : 0n}
+            {#each relationsWithData as relation}
+                {@const key = `${relation.table.name}:${relation.fkColumns.join(",")}`}
+                {@const isExpanded = !collapsedRelations.has(key)}
+                {@const data = relationData.get(key)}
+                {@const remainingCount =
+                    data && data.total !== null ? data.total - BigInt(data.rows.length) : 0n}
 
-            <div class="relation-card">
-                <button class="relation-header" onclick={() => toggleRelation(relation)}>
-                    <span class="caret-icon">
-                        {#if isExpanded}
-                            <CaretDown size={14} />
-                        {:else}
-                            <CaretRight size={14} />
+                <div class="relation-card">
+                    <button class="relation-header" onclick={() => toggleRelation(relation)}>
+                        <span class="caret-icon">
+                            {#if isExpanded}
+                                <CaretDown size={14} />
+                            {:else}
+                                <CaretRight size={14} />
+                            {/if}
+                        </span>
+
+                        <DynamicIcon
+                            name={relation.table.icon ?? "table"}
+                            size={14}
+                            class="table-icon"
+                        />
+
+                        <span class="table-name">{relation.table.name}</span>
+                        <span class="via-text">via {relation.fkColumns.join(", ")}</span>
+
+                        {#if data && !data.loading && data.total !== null}
+                            <span class="count">{data.total.toString()}</span>
                         {/if}
-                    </span>
+                    </button>
 
-                    {#if relation.table.icon}
-                        <DynamicIcon name={relation.table.icon} class="table-icon" />
-                    {:else}
-                        <TableIcon size={14} class="table-icon" />
+                    {#if isExpanded}
+                        <div class="relation-content">
+                            {#if data?.loading}
+                                <div class="loading-message">Loading...</div>
+                            {:else if data && data.rows.length > 0}
+                                <div class="relation-rows">
+                                    {#each data.rows as row}
+                                        {@const target = getNavigationTarget(row, relation)}
+                                        <button
+                                            class="relation-row"
+                                            onclick={() =>
+                                                target && onNavigate?.(target.table, target.pk)}
+                                        >
+                                            <span class="row-id">
+                                                #{target ? formatValue(target.pk) : "?"}
+                                            </span>
+                                            <span class="row-label">
+                                                {getRowDisplayString(row, relation)}
+                                            </span>
+                                        </button>
+                                    {/each}
+
+                                    {#if remainingCount > 0n}
+                                        <button
+                                            class="load-more-button"
+                                            onclick={() => loadMore(relation, key)}
+                                            disabled={data.loadingMore}
+                                        >
+                                            {#if data.loadingMore}
+                                                Loading...
+                                            {:else}
+                                                Load more ({remainingCount.toString()} remaining)
+                                            {/if}
+                                        </button>
+                                    {/if}
+                                </div>
+                            {:else if data}
+                                <div class="empty-message">No related records</div>
+                            {/if}
+                        </div>
                     {/if}
-
-                    <span class="table-name">{relation.table.name}</span>
-                    <span class="via-text">via {relation.fkColumns.join(", ")}</span>
-
-                    {#if data && !data.loading && data.total !== null}
-                        <span class="count">{data.total.toString()}</span>
-                    {/if}
-                </button>
-
-                {#if isExpanded}
-                    <div class="relation-content">
-                        {#if data?.loading}
-                            <div class="loading-message">Loading...</div>
-                        {:else if data && data.rows.length > 0}
-                            <div class="relation-rows">
-                                {#each data.rows as row}
-                                    {@const target = getNavigationTarget(row, relation)}
-                                    <button
-                                        class="relation-row"
-                                        onclick={() =>
-                                            target && onNavigate?.(target.table, target.pk)}
-                                    >
-                                        <span class="row-id">
-                                            #{target ? formatValue(target.pk) : "?"}
-                                        </span>
-                                        <span class="row-label">
-                                            {getRowDisplayString(row, relation)}
-                                        </span>
-                                    </button>
-                                {/each}
-
-                                {#if remainingCount > 0n}
-                                    <button
-                                        class="load-more-button"
-                                        onclick={() => loadMore(relation, key)}
-                                        disabled={data.loadingMore}
-                                    >
-                                        {#if data.loadingMore}
-                                            Loading...
-                                        {:else}
-                                            Load more ({remainingCount.toString()} remaining)
-                                        {/if}
-                                    </button>
-                                {/if}
-                            </div>
-                        {:else if data}
-                            <div class="empty-message">No related records</div>
-                        {/if}
-                    </div>
-                {/if}
-            </div>
-        {/each}
-    </div>
+                </div>
+            {/each}
+        </div>
+    {/if}
 {/if}
 
 <style>
@@ -559,11 +574,12 @@
     }
 
     .section-title {
-        font-size: 0.875rem;
-        font-weight: 500;
+        font-size: 0.75rem;
+        font-weight: 600;
         color: var(--muted-foreground);
         text-transform: uppercase;
         letter-spacing: 0.05em;
+        margin: 0 0 0.5rem 0;
     }
 
     .relation-card {
@@ -585,6 +601,7 @@
         cursor: pointer;
         text-align: left;
         font: inherit;
+        color: var(--card-foreground);
         transition: background-color 0.15s;
     }
 
@@ -650,6 +667,7 @@
         text-align: left;
         font: inherit;
         font-size: 0.875rem;
+        color: var(--card-foreground);
         transition: background-color 0.15s;
     }
 

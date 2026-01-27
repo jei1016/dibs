@@ -1,6 +1,7 @@
 <script lang="ts">
     import { untrack } from "svelte";
-    import { Plus, House } from "phosphor-svelte";
+    import PlusIcon from "phosphor-svelte/lib/PlusIcon";
+    import HouseIcon from "phosphor-svelte/lib/HouseIcon";
     import DynamicIcon from "./components/DynamicIcon.svelte";
     import type {
         SquelServiceCaller,
@@ -13,8 +14,8 @@
         Value,
         ListRequest,
         DibsError,
-    } from "./types";
-    import type { DibsAdminConfig } from "./types/config";
+    } from "@bearcove/dibs-admin/types";
+    import type { DibsAdminConfig } from "@bearcove/dibs-admin/types/config";
     import TableList from "./components/TableList.svelte";
     import DataTable from "./components/DataTable.svelte";
     import FilterInput from "./components/FilterInput.svelte";
@@ -23,9 +24,13 @@
     import RowDetail from "./components/RowDetail.svelte";
     import Breadcrumb from "./components/Breadcrumb.svelte";
     import Dashboard from "./components/Dashboard.svelte";
-    import { Button, Tooltip } from "./lib/ui/index";
-    import type { BreadcrumbEntry } from "./lib/fk-utils";
-    import { createBreadcrumbLabel, getTableByName, getPkValue } from "./lib/fk-utils";
+    import { Button, Tooltip } from "@bearcove/dibs-admin/lib/ui";
+    import type { BreadcrumbEntry } from "@bearcove/dibs-admin/lib/fk-utils";
+    import {
+        createBreadcrumbLabel,
+        getTableByName,
+        getPkValue,
+    } from "@bearcove/dibs-admin/lib/fk-utils";
     import {
         isTableHidden,
         getTableLabel,
@@ -38,7 +43,7 @@
         isColumnSortable,
         getRowExpand,
         getImageColumns,
-    } from "./lib/config";
+    } from "@bearcove/dibs-admin/lib/config";
 
     interface Props {
         client: SquelServiceCaller;
@@ -1053,7 +1058,7 @@
                                     {selectedTable}
                                 </h2>
                                 <Button onclick={openCreateDialog}>
-                                    <Plus size={16} />
+                                    <PlusIcon size={16} />
                                     New
                                 </Button>
                             </div>
@@ -1131,7 +1136,7 @@
         height: 100%;
         min-height: 100vh;
         display: grid;
-        grid-template-columns: 220px 1fr;
+        grid-template-columns: 280px 1fr;
     }
 
     .table-section {

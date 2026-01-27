@@ -22,6 +22,7 @@
     "@bearcove/dibs-admin": "link:../../packages/dibs-admin",
     "@bearcove/roam-core": "link:../../../roam/typescript/packages/roam-core",
     "@bearcove/roam-postcard": "link:../../../roam/typescript/packages/roam-postcard",
-    "@bearcove/roam-ws": "link:../../../roam/typescript/packages/roam-ws"
+    "@bearcove/roam-ws": "link:../../../roam/typescript/packages/roam-ws",
+    "@farmfe/core": "2.0.0-nightly-20250827162746"
   }
 }

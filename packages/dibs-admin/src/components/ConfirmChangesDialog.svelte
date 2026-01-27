@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { AlertDialog, Button } from "../lib/ui/index";
-    import { ArrowRight } from "phosphor-svelte";
+    import { AlertDialog, Button } from "@bearcove/dibs-admin/lib/ui";
+    import ArrowRightIcon from "phosphor-svelte/lib/ArrowRightIcon";
 
     interface Change {
         field: string;

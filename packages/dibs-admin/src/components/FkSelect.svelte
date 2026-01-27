@@ -1,7 +1,11 @@
 <script lang="ts">
-    import type { TableInfo, SquelClient, ListRequest } from "../types";
-    import { getDisplayColumn, getPkValue, formatValueForDisplay } from "../lib/fk-utils";
-    import { Select } from "../lib/ui/index";
+    import type { TableInfo, SquelClient, ListRequest } from "@bearcove/dibs-admin/types";
+    import {
+        getDisplayColumn,
+        getPkValue,
+        formatValueForDisplay,
+    } from "@bearcove/dibs-admin/lib/fk-utils";
+    import { Select } from "@bearcove/dibs-admin/lib/ui";
 
     interface Props {
         value: string;

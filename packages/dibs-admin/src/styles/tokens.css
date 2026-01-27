@@ -1,0 +1,150 @@
+/* Import Nunito from Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap");
+
+/* Design tokens - CSS custom properties */
+:root {
+    --font-sans: "Nunito", system-ui, -apple-system, sans-serif;
+    --radius: 0.625rem;
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+
+    /* Light mode colors */
+    --background: oklch(0.98 0.005 260);
+    --foreground: oklch(0.18 0.02 260);
+    --card: oklch(0.99 0.003 260);
+    --card-foreground: oklch(0.18 0.02 260);
+    --popover: oklch(0.99 0.005 260);
+    --popover-foreground: oklch(0.18 0.02 260);
+    --primary: oklch(0.5 0.2 250);
+    --primary-foreground: oklch(0.98 0 0);
+    --secondary: oklch(0.94 0.015 260);
+    --secondary-foreground: oklch(0.25 0.02 260);
+    --muted: oklch(0.94 0.01 260);
+    --muted-foreground: oklch(0.5 0.03 260);
+    --accent: oklch(0.92 0.04 250);
+    --accent-foreground: oklch(0.25 0.02 260);
+    --destructive: oklch(0.55 0.24 25);
+    --destructive-foreground: oklch(0.98 0 0);
+    --border: oklch(0.88 0.02 260);
+    --input: oklch(0.92 0.015 260);
+    --ring: oklch(0.5 0.2 250);
+    --chart-1: oklch(0.55 0.2 250);
+    --chart-2: oklch(0.6 0.15 160);
+    --chart-3: oklch(0.65 0.15 70);
+    --chart-4: oklch(0.65 0.18 45);
+    --chart-5: oklch(0.55 0.2 320);
+    --sidebar: oklch(0.96 0.01 260);
+    --sidebar-foreground: oklch(0.2 0.02 260);
+    --sidebar-primary: oklch(0.5 0.2 250);
+    --sidebar-primary-foreground: oklch(0.98 0 0);
+    --sidebar-accent: oklch(0.9 0.04 250);
+    --sidebar-accent-foreground: oklch(0.25 0.02 260);
+    --sidebar-border: oklch(0.88 0.02 260);
+    --sidebar-ring: oklch(0.5 0.2 250);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Softer dark theme - raised backgrounds for better hierarchy */
+        /* Base: charcoal gray with subtle warmth */
+        --background: oklch(0.18 0.006 270);
+        --foreground: oklch(0.93 0.008 80);
+
+        /* Cards: slightly elevated for visual separation */
+        --card: oklch(0.22 0.008 270);
+        --card-foreground: oklch(0.93 0.008 80);
+
+        /* Popovers: even more elevated */
+        --popover: oklch(0.24 0.01 270);
+        --popover-foreground: oklch(0.93 0.008 80);
+
+        /* Primary: soft teal that's readable */
+        --primary: oklch(0.7 0.12 180);
+        --primary-foreground: oklch(0.15 0.02 180);
+
+        /* Secondary: subtle elevation */
+        --secondary: oklch(0.28 0.012 270);
+        --secondary-foreground: oklch(0.9 0.008 80);
+
+        /* Muted: for subdued elements */
+        --muted: oklch(0.26 0.01 270);
+        --muted-foreground: oklch(0.65 0.015 80);
+
+        /* Accent: hover states */
+        --accent: oklch(0.3 0.02 270);
+        --accent-foreground: oklch(0.93 0.008 80);
+
+        /* Destructive: warm red */
+        --destructive: oklch(0.62 0.2 25);
+        --destructive-foreground: oklch(0.98 0 0);
+
+        /* Borders: visible but subtle - key for hierarchy */
+        --border: oklch(0.35 0.015 270);
+        --input: oklch(0.26 0.012 270);
+        --ring: oklch(0.65 0.1 180);
+
+        /* Charts */
+        --chart-1: oklch(0.7 0.14 180);
+        --chart-2: oklch(0.72 0.12 150);
+        --chart-3: oklch(0.75 0.14 85);
+        --chart-4: oklch(0.72 0.15 50);
+        --chart-5: oklch(0.68 0.16 320);
+
+        /* Sidebar: distinct from main content */
+        --sidebar: oklch(0.15 0.008 270);
+        --sidebar-foreground: oklch(0.88 0.01 80);
+        --sidebar-primary: oklch(0.7 0.12 180);
+        --sidebar-primary-foreground: oklch(0.15 0.02 180);
+        --sidebar-accent: oklch(0.24 0.02 270);
+        --sidebar-accent-foreground: oklch(0.93 0.008 80);
+        --sidebar-border: oklch(0.3 0.012 270);
+        --sidebar-ring: oklch(0.65 0.1 180);
+    }
+}
+
+/* Tooltip styles (must be global for portal) */
+.tooltip-content {
+    z-index: 50;
+    overflow: hidden;
+    border-radius: var(--radius-md, 0.375rem);
+    border: 1px solid var(--border);
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    box-shadow:
+        0 4px 6px -1px rgb(0 0 0 / 0.1),
+        0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.tooltip-content[data-state="delayed-open"] {
+    animation: tooltip-in 0.15s ease-out;
+}
+
+.tooltip-content[data-state="closed"] {
+    animation: tooltip-out 0.1s ease-in;
+}
+
+@keyframes tooltip-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes tooltip-out {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}

@@ -1,8 +1,8 @@
 <script lang="ts">
-    import type { CountTile } from "../../types/config";
-    import type { SchemaInfo, SquelClient } from "../../types";
-    import { filterConfigsToFilters } from "../../lib/config";
-    import { Card } from "../../lib/ui/index";
+    import type { CountTile } from "@bearcove/dibs-admin/types/config";
+    import type { SchemaInfo, SquelClient } from "@bearcove/dibs-admin/types";
+    import { filterConfigsToFilters } from "@bearcove/dibs-admin/lib/config";
+    import { Card } from "@bearcove/dibs-admin/lib/ui";
     import DynamicIcon from "../DynamicIcon.svelte";
 
     interface Props {

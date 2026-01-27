@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { ArrowRight } from "phosphor-svelte";
-    import type { LatestRecordsTile } from "../../types/config";
-    import type { SchemaInfo, SquelClient, Row, Value } from "../../types";
-    import { Card } from "../../lib/ui/index";
+    import ArrowRightIcon from "phosphor-svelte/lib/ArrowRightIcon";
+    import type { LatestRecordsTile } from "@bearcove/dibs-admin/types/config";
+    import type { SchemaInfo, SquelClient, Row, Value } from "@bearcove/dibs-admin/types";
+    import { Card } from "@bearcove/dibs-admin/lib/ui";
     import DynamicIcon from "../DynamicIcon.svelte";
 
     interface Props {
@@ -165,9 +165,7 @@
     <Card.Header class="tile-header">
         <Card.Title class="tile-title">
             <span class="title-content">
-                {#if tableInfo?.icon}
-                    <DynamicIcon name={tableInfo.icon} size={16} class="title-icon" />
-                {/if}
+                <DynamicIcon name={tableInfo?.icon ?? "table"} size={16} class="title-icon" />
                 {title}
             </span>
             <button class="view-all-btn" onclick={() => onSelectTable(config.table)}>

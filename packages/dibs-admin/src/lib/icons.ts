@@ -9,22 +9,20 @@
  */
 
 import type { Component } from "svelte";
-import type { ColumnInfo, TableInfo, SchemaInfo } from "../types";
-import {
-  ClockIcon,
-  HashIcon,
-  TextTIcon,
-  ToggleLeftIcon,
-  CalendarIcon,
-  TimerIcon,
-  BinaryIcon,
-  FileTextIcon,
-  BracketsSquareIcon,
-  CodeIcon,
-  TableIcon,
-  LinkIcon,
-} from "phosphor-svelte";
-import { getFkForColumn, getTableByName } from "./fk-utils";
+import type { ColumnInfo, TableInfo, SchemaInfo } from "@bearcove/dibs-admin/types";
+import ClockIcon from "phosphor-svelte/lib/ClockIcon";
+import HashIcon from "phosphor-svelte/lib/HashIcon";
+import TextTIcon from "phosphor-svelte/lib/TextTIcon";
+import ToggleLeftIcon from "phosphor-svelte/lib/ToggleLeftIcon";
+import CalendarIcon from "phosphor-svelte/lib/CalendarIcon";
+import TimerIcon from "phosphor-svelte/lib/TimerIcon";
+import BinaryIcon from "phosphor-svelte/lib/BinaryIcon";
+import FileTextIcon from "phosphor-svelte/lib/FileTextIcon";
+import BracketsSquareIcon from "phosphor-svelte/lib/BracketsSquareIcon";
+import CodeIcon from "phosphor-svelte/lib/CodeIcon";
+import TableIcon from "phosphor-svelte/lib/TableIcon";
+import LinkIcon from "phosphor-svelte/lib/LinkIcon";
+import { getFkForColumn, getTableByName } from "@bearcove/dibs-admin/lib/fk-utils";
 
 export type IconComponent = Component<{ size?: number; class?: string }>;
 

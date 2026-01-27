@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { CaretRight } from "phosphor-svelte";
-    import type { BreadcrumbEntry } from "../lib/fk-utils";
+    import CaretRightIcon from "phosphor-svelte/lib/CaretRightIcon";
+    import type { BreadcrumbEntry } from "@bearcove/dibs-admin/lib/fk-utils";
 
     interface Props {
         entries: BreadcrumbEntry[];

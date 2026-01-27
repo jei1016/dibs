@@ -1,16 +1,14 @@
 <script lang="ts">
-    import {
-        CaretUp,
-        CaretDown,
-        Clock,
-        Hash,
-        TextT,
-        ToggleLeft,
-        Calendar,
-        Timer,
-        Binary,
-        ArrowSquareOut,
-    } from "phosphor-svelte";
+    import CaretUpIcon from "phosphor-svelte/lib/CaretUpIcon";
+    import CaretDownIcon from "phosphor-svelte/lib/CaretDownIcon";
+    import ClockIcon from "phosphor-svelte/lib/ClockIcon";
+    import HashIcon from "phosphor-svelte/lib/HashIcon";
+    import TextTIcon from "phosphor-svelte/lib/TextTIcon";
+    import ToggleLeftIcon from "phosphor-svelte/lib/ToggleLeftIcon";
+    import CalendarIcon from "phosphor-svelte/lib/CalendarIcon";
+    import TimerIcon from "phosphor-svelte/lib/TimerIcon";
+    import BinaryIcon from "phosphor-svelte/lib/BinaryIcon";
+    import ArrowSquareOutIcon from "phosphor-svelte/lib/ArrowSquareOutIcon";
     import type {
         Row,
         ColumnInfo,
@@ -20,10 +18,10 @@
         TableInfo,
         SchemaInfo,
         SquelClient,
-    } from "../types";
-    import type { RowExpandConfig } from "../types/config";
+    } from "@bearcove/dibs-admin/types";
+    import type { RowExpandConfig } from "@bearcove/dibs-admin/types/config";
     import type { Component } from "svelte";
-    import { getFkForColumn, getTableByName } from "../lib/fk-utils";
+    import { getFkForColumn, getTableByName } from "@bearcove/dibs-admin/lib/fk-utils";
     import FkCell from "./FkCell.svelte";
     import DynamicIcon from "./DynamicIcon.svelte";
     import MarkdownRenderer from "./MarkdownRenderer.svelte";
@@ -77,10 +75,11 @@
 
     function getTypeIcon(col: ColumnInfo): IconComponent | null {
         const t = col.sql_type.toUpperCase();
-        if (t.includes("TIMESTAMP") || t.includes("TIMESTAMPTZ")) return Clock;
-        if (t === "DATE") return Calendar;
-        if (t === "TIME") return Timer;
-        if (t.includes("INT") || t === "BIGINT" || t === "SMALLINT" || t === "INTEGER") return Hash;
+        if (t.includes("TIMESTAMP") || t.includes("TIMESTAMPTZ")) return ClockIcon;
+        if (t === "DATE") return CalendarIcon;
+        if (t === "TIME") return TimerIcon;
+        if (t.includes("INT") || t === "BIGINT" || t === "SMALLINT" || t === "INTEGER")
+            return HashIcon;
         if (
             t === "REAL" ||
             t === "DOUBLE PRECISION" ||
@@ -88,10 +87,10 @@
             t.includes("NUMERIC") ||
             t.includes("DECIMAL")
         )
-            return Hash;
-        if (t === "BOOLEAN" || t === "BOOL") return ToggleLeft;
-        if (t === "TEXT" || t.includes("VARCHAR") || t.includes("CHAR")) return TextT;
-        if (t === "BYTEA") return Binary;
+            return HashIcon;
+        if (t === "BOOLEAN" || t === "BOOL") return ToggleLeftIcon;
+        if (t === "TEXT" || t.includes("VARCHAR") || t.includes("CHAR")) return TextTIcon;
+        if (t === "BYTEA") return BinaryIcon;
         return null;
     }
 
@@ -247,9 +246,9 @@
                             {col.name}
                             <span class="sort-icon" class:visible={sortDir !== null}>
                                 {#if sortDir === "Desc"}
-                                    <CaretDown size={12} weight="bold" />
+                                    <CaretDownIcon size={12} weight="bold" />
                                 {:else}
-                                    <CaretUp size={12} weight="bold" />
+                                    <CaretUpIcon size={12} weight="bold" />
                                 {/if}
                             </span>
                         </span>

@@ -1,7 +1,8 @@
 <script lang="ts">
-    import { Plus, X } from "phosphor-svelte";
-    import type { ColumnInfo, Filter, FilterOp, Value } from "../types";
-    import { Button, Input, Badge, Select } from "../lib/ui/index";
+    import PlusIcon from "phosphor-svelte/lib/PlusIcon";
+    import XIcon from "phosphor-svelte/lib/XIcon";
+    import type { ColumnInfo, Filter, FilterOp, Value } from "@bearcove/dibs-admin/types";
+    import { Button, Input, Badge, Select } from "@bearcove/dibs-admin/lib/ui";
 
     interface Props {
         columns: ColumnInfo[];
@@ -148,7 +149,7 @@
                     onclick={() => onRemoveFilter(i)}
                     aria-label="Remove filter"
                 >
-                    <X size={14} />
+                    <XIcon size={14} />
                 </button>
             </Badge>
         {/each}
@@ -190,7 +191,7 @@
     {/if}
 
     <Button variant="secondary" size="sm" onclick={addFilter}>
-        <Plus size={16} />
+        <PlusIcon size={16} />
         Add Filter
     </Button>
 </div>
