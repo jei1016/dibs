@@ -12,7 +12,7 @@
       "default": "./src/index.ts"
     },
     "./styles": "./src/styles/app.css",
-    "./styles/*": "./src/styles/*.css",
+    "./styles/*": "./src/styles/*",
     "./types": {
       "types": "./src/types/index.ts",
       "default": "./src/types/index.ts"
