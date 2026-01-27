@@ -121,13 +121,19 @@
     });
 </script>
 
-<div
-    bind:this={container}
-    class="codemirror-wrapper border border-input rounded-md overflow-hidden {className}"
-    class:opacity-50={disabled}
-></div>
+<div bind:this={container} class="codemirror-wrapper {className}" class:disabled></div>
 
 <style>
+    .codemirror-wrapper {
+        border: 1px solid var(--input);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+
+    .codemirror-wrapper.disabled {
+        opacity: 0.5;
+    }
+
     .codemirror-wrapper :global(.cm-editor) {
         min-height: 150px;
         max-height: 400px;

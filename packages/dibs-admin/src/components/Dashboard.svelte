@@ -25,10 +25,10 @@
     let title = $derived(dashboardConfig?.title ?? "Dashboard");
 </script>
 
-<section class="p-6 md:p-8 overflow-auto flex flex-col max-h-screen">
-    <h1 class="text-2xl font-semibold text-foreground mb-8">{title}</h1>
+<section class="dashboard">
+    <h1 class="dashboard-title">{title}</h1>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="tiles-grid">
         {#each tiles as tile}
             {#if tile.type === "latest"}
                 <LatestTile config={tile} {schema} {client} {onSelectTable} />
@@ -44,8 +44,55 @@
     </div>
 
     {#if tiles.length === 0}
-        <div class="flex-1 flex items-center justify-center text-muted-foreground/60">
-            No dashboard tiles configured
-        </div>
+        <div class="empty-state">No dashboard tiles configured</div>
     {/if}
 </section>
+
+<style>
+    .dashboard {
+        padding: 1.5rem;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        max-height: 100vh;
+    }
+
+    @media (min-width: 768px) {
+        .dashboard {
+            padding: 2rem;
+        }
+    }
+
+    .dashboard-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--foreground);
+        margin-bottom: 2rem;
+    }
+
+    .tiles-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+        .tiles-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .tiles-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .empty-state {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: color-mix(in oklch, var(--muted-foreground) 60%, transparent);
+    }
+</style>

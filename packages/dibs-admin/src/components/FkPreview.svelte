@@ -17,7 +17,7 @@
         if (!row || !table) return [];
 
         const displayCol = getDisplayColumn(table);
-        const pkCol = table.columns.find(c => c.primary_key);
+        const pkCol = table.columns.find((c) => c.primary_key);
 
         // Prioritize: PK, display column, then first few text columns
         const priority = [pkCol?.name, displayCol?.name].filter(Boolean) as string[];
@@ -26,7 +26,7 @@
 
         // Add priority columns first
         for (const name of priority) {
-            const field = row.fields.find(f => f.name === name);
+            const field = row.fields.find((f) => f.name === name);
             if (field && !shown.has(name)) {
                 result.push({ name, value: formatValueForDisplay(field.value) });
                 shown.add(name);
@@ -48,25 +48,95 @@
     let previewFields = $derived(getPreviewFields());
 </script>
 
-<div class="bg-popover border border-border min-w-[220px] max-w-[320px] shadow-xl rounded-lg overflow-hidden">
+<div class="fk-preview">
     {#if loading}
-        <div class="text-muted-foreground text-xs p-3">Loading...</div>
+        <div class="status-message">Loading...</div>
     {:else if error}
-        <div class="text-destructive text-xs p-3">{error}</div>
+        <div class="status-message error">{error}</div>
     {:else if row && table}
-        <div class="bg-accent/50 px-3 py-2 border-b border-border flex items-center gap-2">
-            <ArrowSquareOut size={12} class="text-primary" />
-            <span class="text-xs font-medium text-accent-foreground">{table.name}</span>
+        <div class="header">
+            <ArrowSquareOut size={12} class="icon" />
+            <span class="table-name">{table.name}</span>
         </div>
-        <div class="p-3 space-y-1.5">
-            {#each previewFields as field, i}
-                <div class="flex gap-2 text-sm">
-                    <span class="text-muted-foreground shrink-0 min-w-[70px]">{field.name}</span>
-                    <span class="text-popover-foreground truncate font-medium">{field.value}</span>
+        <div class="fields">
+            {#each previewFields as field}
+                <div class="field-row">
+                    <span class="field-name">{field.name}</span>
+                    <span class="field-value">{field.value}</span>
                 </div>
             {/each}
         </div>
     {:else}
-        <div class="text-muted-foreground text-xs p-3">No data</div>
+        <div class="status-message">No data</div>
     {/if}
 </div>
+
+<style>
+    .fk-preview {
+        background-color: var(--popover);
+        border: 1px solid var(--border);
+        min-width: 220px;
+        max-width: 320px;
+        box-shadow:
+            0 10px 15px -3px rgb(0 0 0 / 0.1),
+            0 4px 6px -4px rgb(0 0 0 / 0.1);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+
+    .status-message {
+        color: var(--muted-foreground);
+        font-size: 0.75rem;
+        padding: 0.75rem;
+    }
+
+    .status-message.error {
+        color: var(--destructive);
+    }
+
+    .header {
+        background-color: color-mix(in oklch, var(--accent) 50%, transparent);
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .header :global(.icon) {
+        color: var(--primary);
+    }
+
+    .table-name {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--accent-foreground);
+    }
+
+    .fields {
+        padding: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+    }
+
+    .field-row {
+        display: flex;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .field-name {
+        color: var(--muted-foreground);
+        flex-shrink: 0;
+        min-width: 70px;
+    }
+
+    .field-value {
+        color: var(--popover-foreground);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 500;
+    }
+</style>

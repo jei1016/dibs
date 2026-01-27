@@ -236,22 +236,16 @@
     }
 </script>
 
-<div class="flex-1 overflow-auto">
-    <table class="w-full border-collapse text-sm">
+<div class="table-container">
+    <table class="data-table">
         <thead>
             <tr>
                 {#each columns as col}
                     {@const sortDir = getSortDir(col.name)}
-                    <th
-                        class="px-4 py-3 text-left text-muted-foreground font-medium sticky top-0 cursor-pointer select-none whitespace-nowrap bg-background hover:text-foreground transition-colors"
-                        onclick={() => handleHeaderClick(col.name)}
-                    >
-                        <span class="inline-flex items-center gap-2">
+                    <th class="table-header" onclick={() => handleHeaderClick(col.name)}>
+                        <span class="header-content">
                             {col.name}
-                            <span
-                                class="opacity-0 transition-opacity"
-                                class:opacity-100={sortDir !== null}
-                            >
+                            <span class="sort-icon" class:visible={sortDir !== null}>
                                 {#if sortDir === "Desc"}
                                     <CaretDown size={12} weight="bold" />
                                 {:else}
@@ -267,40 +261,21 @@
             {#each rows as row}
                 {@const clickable = onRowClick !== undefined}
                 {@const expandedContent = getExpandedContent(row)}
-                <tr
-                    class="border-t border-border transition-all duration-150 {clickable
-                        ? 'cursor-pointer border-l-2 border-l-transparent hover:bg-accent/50 hover:border-l-primary'
-                        : ''}"
-                    onclick={() => handleRowClick(row)}
-                >
+                <tr class="table-row" class:clickable onclick={() => handleRowClick(row)}>
                     {#each columns as col}
                         {@const cell = getRowValue(row, col)}
                         {@const TypeIcon = getTypeIcon(col)}
                         {@const fkInfo = getFkInfo(col)}
                         {@const rawValue = getRawValue(row, col)}
-                        <td
-                            class="px-4 py-3 text-sm max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap"
-                            class:text-muted-foreground={cell.isNull}
-                        >
-                            <span class="inline-flex items-center gap-1.5">
+                        <td class="table-cell" class:null-value={cell.isNull}>
+                            <span class="cell-content">
                                 {#if col.icon}
-                                    <DynamicIcon
-                                        name={col.icon}
-                                        size={12}
-                                        class="text-muted-foreground/60 flex-shrink-0"
-                                    />
+                                    <DynamicIcon name={col.icon} size={12} class="type-icon" />
                                 {:else if TypeIcon}
-                                    <TypeIcon
-                                        size={12}
-                                        class="text-muted-foreground/60 flex-shrink-0"
-                                    />
+                                    <TypeIcon size={12} class="type-icon" />
                                 {/if}
                                 {#if isImageColumn(col.name) && rawValue.tag === "String" && rawValue.value}
-                                    <img
-                                        src={rawValue.value}
-                                        alt={col.name}
-                                        class="w-8 h-8 rounded-full object-cover"
-                                    />
+                                    <img src={rawValue.value} alt={col.name} class="cell-image" />
                                 {:else if fkInfo && client && rawValue.tag !== "Null"}
                                     {@const cachedRow = getCachedFkRow(
                                         fkInfo.fkTable.name,
@@ -327,24 +302,21 @@
                     {@const previewLines = rowExpand?.previewLines ?? 3}
                     {@const previewData = getPreview(expandedContent, previewLines)}
                     {@const displayContent = isExpanded ? expandedContent : previewData.preview}
-                    <tr class="bg-muted/30">
-                        <td colspan={columns.length} class="px-4 py-3 text-sm">
+                    <tr class="expanded-row">
+                        <td colspan={columns.length} class="expanded-cell">
                             {#if rowExpand?.render === "markdown"}
-                                <div class="prose prose-sm dark:prose-invert max-w-none">
+                                <div class="markdown-content">
                                     <MarkdownRenderer content={displayContent} />
                                 </div>
                             {:else if rowExpand?.render === "code"}
-                                <pre
-                                    class="font-mono text-xs bg-muted p-3 rounded overflow-x-auto"><code
-                                        >{displayContent}</code
-                                    ></pre>
+                                <pre class="code-content"><code>{displayContent}</code></pre>
                             {:else}
-                                <div class="whitespace-pre-wrap">{displayContent}</div>
+                                <div class="text-content">{displayContent}</div>
                             {/if}
                             {#if previewData.truncated}
                                 <button
                                     type="button"
-                                    class="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                    class="expand-toggle"
                                     onclick={(e) => toggleExpanded(rowIndex, e)}
                                 >
                                     {isExpanded ? "Show less" : "Show more..."}
@@ -357,3 +329,137 @@
         </tbody>
     </table>
 </div>
+
+<style>
+    .table-container {
+        flex: 1;
+        overflow: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+    .table-header {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        color: var(--muted-foreground);
+        font-weight: 500;
+        position: sticky;
+        top: 0;
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+        background-color: var(--background);
+        transition: color 0.15s;
+    }
+
+    .table-header:hover {
+        color: var(--foreground);
+    }
+
+    .header-content {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .sort-icon {
+        opacity: 0;
+        transition: opacity 0.15s;
+    }
+
+    .sort-icon.visible {
+        opacity: 1;
+    }
+
+    .table-row {
+        border-top: 1px solid var(--border);
+        transition: all 0.15s;
+    }
+
+    .table-row.clickable {
+        cursor: pointer;
+        border-left: 2px solid transparent;
+    }
+
+    .table-row.clickable:hover {
+        background-color: color-mix(in oklch, var(--accent) 50%, transparent);
+        border-left-color: var(--primary);
+    }
+
+    .table-cell {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .table-cell.null-value {
+        color: var(--muted-foreground);
+    }
+
+    .cell-content {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .cell-content :global(.type-icon) {
+        color: color-mix(in oklch, var(--muted-foreground) 60%, transparent);
+        flex-shrink: 0;
+    }
+
+    .cell-image {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 9999px;
+        object-fit: cover;
+    }
+
+    .expanded-row {
+        background-color: color-mix(in oklch, var(--muted) 30%, transparent);
+    }
+
+    .expanded-cell {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .markdown-content {
+        max-width: none;
+    }
+
+    .code-content {
+        font-family: ui-monospace, monospace;
+        font-size: 0.75rem;
+        background-color: var(--muted);
+        padding: 0.75rem;
+        border-radius: var(--radius-md);
+        overflow-x: auto;
+        margin: 0;
+    }
+
+    .text-content {
+        white-space: pre-wrap;
+    }
+
+    .expand-toggle {
+        margin-top: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        transition: color 0.15s;
+    }
+
+    .expand-toggle:hover {
+        color: var(--foreground);
+    }
+</style>

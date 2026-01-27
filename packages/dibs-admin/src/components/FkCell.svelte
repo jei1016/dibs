@@ -101,19 +101,19 @@
 </script>
 
 <button
-    class="inline-flex items-center gap-1 text-primary hover:text-primary/80 hover:underline transition-colors cursor-pointer"
+    class="fk-link"
     onclick={handleClick}
     onmouseenter={handleMouseEnter}
     onmouseleave={handleMouseLeave}
 >
     {displayValue}
-    <ArrowSquareOut size={12} class="opacity-50" />
+    <ArrowSquareOut size={12} class="link-icon" />
 </button>
 
 {#if showPreview}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
-        class="fixed z-50"
+        class="preview-container"
         style="left: {previewPosition.x}px; top: {previewPosition.y}px;"
         onmouseenter={() => (showPreview = true)}
         onmouseleave={handleMouseLeave}
@@ -121,3 +121,32 @@
         <FkPreview row={previewRow} table={fkTable} loading={previewLoading} error={previewError} />
     </div>
 {/if}
+
+<style>
+    .fk-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: var(--primary);
+        background: none;
+        border: none;
+        padding: 0;
+        font: inherit;
+        cursor: pointer;
+        transition: color 0.15s;
+    }
+
+    .fk-link:hover {
+        color: color-mix(in oklch, var(--primary) 80%, transparent);
+        text-decoration: underline;
+    }
+
+    .fk-link :global(.link-icon) {
+        opacity: 0.5;
+    }
+
+    .preview-container {
+        position: fixed;
+        z-index: 50;
+    }
+</style>

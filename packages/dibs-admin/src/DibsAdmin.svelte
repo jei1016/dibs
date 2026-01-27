@@ -987,13 +987,11 @@
 </script>
 
 <Tooltip.Provider>
-    <div class="h-full bg-background text-foreground">
+    <div class="admin-root">
         {#if loading && !schema}
-            <div class="flex items-center justify-center h-full p-8 text-muted-foreground">
-                Loading schema...
-            </div>
+            <div class="loading-state">Loading schema...</div>
         {:else if schema}
-            <div class="max-w-6xl mx-auto h-full max-h-screen grid grid-cols-[200px_1fr]">
+            <div class="admin-layout">
                 <TableList
                     tables={visibleTables}
                     selected={selectedTable}
@@ -1041,18 +1039,16 @@
                     />
                 {:else}
                     <!-- Table list view -->
-                    <section class="p-6 md:p-8 overflow-auto flex flex-col max-h-screen">
+                    <section class="table-section">
                         {#if selectedTable && currentTable}
                             <Breadcrumb entries={breadcrumbs} onNavigate={navigateToBreadcrumb} />
 
-                            <div class="flex justify-between items-center mb-6">
-                                <h2
-                                    class="text-lg font-medium text-foreground uppercase tracking-wide flex items-center gap-2"
-                                >
+                            <div class="table-header">
+                                <h2 class="table-title">
                                     <DynamicIcon
                                         name={currentTable.icon ?? "table"}
                                         size={20}
-                                        class="opacity-70"
+                                        class="table-icon"
                                     />
                                     {selectedTable}
                                 </h2>
@@ -1063,7 +1059,7 @@
                             </div>
 
                             {#if error}
-                                <p class="text-destructive mb-6 text-sm">
+                                <p class="error-message">
                                     {error}
                                 </p>
                             {/if}
@@ -1071,17 +1067,9 @@
                             <FilterInput {columns} {filters} onFiltersChange={setFilters} />
 
                             {#if loading}
-                                <div
-                                    class="flex-1 flex items-center justify-center text-muted-foreground"
-                                >
-                                    Loading...
-                                </div>
+                                <div class="status-message">Loading...</div>
                             {:else if rows.length === 0}
-                                <div
-                                    class="flex-1 flex items-center justify-center text-muted-foreground/60"
-                                >
-                                    No rows found.
-                                </div>
+                                <div class="status-message empty">No rows found.</div>
                             {:else}
                                 <DataTable
                                     columns={displayColumns}
@@ -1109,19 +1097,100 @@
                                 />
                             {/if}
                         {:else}
-                            <div
-                                class="flex-1 flex items-center justify-center text-muted-foreground/60"
-                            >
-                                Select a table
-                            </div>
+                            <div class="status-message empty">Select a table</div>
                         {/if}
                     </section>
                 {/if}
             </div>
         {:else if error}
-            <p class="text-destructive p-8 text-sm">
+            <p class="error-message standalone">
                 {error}
             </p>
         {/if}
     </div>
 </Tooltip.Provider>
+
+<style>
+    .admin-root {
+        height: 100%;
+        background-color: var(--background);
+        color: var(--foreground);
+    }
+
+    .loading-state {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 2rem;
+        color: var(--muted-foreground);
+    }
+
+    .admin-layout {
+        max-width: 72rem;
+        margin: 0 auto;
+        height: 100%;
+        max-height: 100vh;
+        display: grid;
+        grid-template-columns: 200px 1fr;
+    }
+
+    .table-section {
+        padding: 1.5rem;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        max-height: 100vh;
+    }
+
+    @media (min-width: 768px) {
+        .table-section {
+            padding: 2rem;
+        }
+    }
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .table-title {
+        font-size: 1.125rem;
+        font-weight: 500;
+        color: var(--foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    :global(.table-icon) {
+        opacity: 0.7;
+    }
+
+    .error-message {
+        color: var(--destructive);
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+    }
+
+    .error-message.standalone {
+        padding: 2rem;
+        margin-bottom: 0;
+    }
+
+    .status-message {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted-foreground);
+    }
+
+    .status-message.empty {
+        color: oklch(from var(--muted-foreground) l c h / 0.6);
+    }
+</style>

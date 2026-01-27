@@ -26,7 +26,7 @@
         onDashboard,
         dashboardActive = false,
         timeMode = "relative",
-        onTimeModeChange
+        onTimeModeChange,
     }: Props = $props();
 
     function toggleTimeMode() {
@@ -35,45 +35,137 @@
     }
 </script>
 
-<aside class="bg-sidebar p-6 overflow-y-auto border-r border-sidebar-border flex flex-col">
+<aside class="sidebar">
     {#if showDashboardButton}
         <button
-            class="w-full text-left px-3 py-2 text-sm rounded-md transition-all duration-150 flex items-center gap-2 mb-4 {dashboardActive
-                ? 'text-sidebar-primary-foreground bg-sidebar-primary font-medium'
-                : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent'}"
+            class="nav-button dashboard-button"
+            class:active={dashboardActive}
             onclick={onDashboard}
         >
-            <House size={16} class="shrink-0 opacity-70" />
+            <House size={16} class="nav-icon" />
             <span>Dashboard</span>
         </button>
     {/if}
 
-    <h2 class="text-xs font-medium text-sidebar-foreground/60 uppercase tracking-widest mb-4">Tables</h2>
-    <ul class="space-y-1 flex-1">
+    <h2 class="section-title">Tables</h2>
+    <ul class="table-list">
         {#each tables as table}
             <li>
                 <button
-                    class="w-full text-left px-3 py-2 text-sm rounded-md transition-all duration-150 flex items-center gap-2 {selected ===
-                    table.name && !dashboardActive
-                        ? 'text-sidebar-primary-foreground bg-sidebar-primary font-medium'
-                        : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent'}"
+                    class="nav-button"
+                    class:active={selected === table.name && !dashboardActive}
                     onclick={() => onSelect(table.name)}
                 >
-                    <DynamicIcon name={table.icon ?? "table"} size={16} class="shrink-0 opacity-70" />
+                    <DynamicIcon name={table.icon ?? "table"} size={16} class="nav-icon" />
                     <span class="truncate">{getTableLabel(config, table.name) ?? table.name}</span>
                 </button>
             </li>
         {/each}
     </ul>
 
-    <!-- Settings -->
-    <div class="pt-4 mt-4 border-t border-sidebar-border">
-        <button
-            class="w-full text-left px-3 py-2 text-xs rounded-md transition-all duration-150 flex items-center gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-            onclick={toggleTimeMode}
-        >
+    <div class="settings">
+        <button class="settings-button" onclick={toggleTimeMode}>
             <Clock size={14} />
             <span>Times: {timeMode}</span>
         </button>
     </div>
 </aside>
+
+<style>
+    .sidebar {
+        background-color: var(--sidebar);
+        padding: 1.5rem;
+        overflow-y: auto;
+        border-right: 1px solid var(--sidebar-border);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .nav-button {
+        width: 100%;
+        text-align: left;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        border-radius: var(--radius-md);
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: color-mix(in oklch, var(--sidebar-foreground) 70%, transparent);
+    }
+
+    .nav-button:hover {
+        color: var(--sidebar-foreground);
+        background-color: var(--sidebar-accent);
+    }
+
+    .nav-button.active {
+        color: var(--sidebar-primary-foreground);
+        background-color: var(--sidebar-primary);
+        font-weight: 500;
+    }
+
+    .nav-button :global(.nav-icon) {
+        flex-shrink: 0;
+        opacity: 0.7;
+    }
+
+    .dashboard-button {
+        margin-bottom: 1rem;
+    }
+
+    .section-title {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: color-mix(in oklch, var(--sidebar-foreground) 60%, transparent);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+    }
+
+    .table-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex: 1;
+    }
+
+    .truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .settings {
+        padding-top: 1rem;
+        margin-top: 1rem;
+        border-top: 1px solid var(--sidebar-border);
+    }
+
+    .settings-button {
+        width: 100%;
+        text-align: left;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+        border-radius: var(--radius-md);
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: color-mix(in oklch, var(--sidebar-foreground) 60%, transparent);
+    }
+
+    .settings-button:hover {
+        color: var(--sidebar-foreground);
+        background-color: var(--sidebar-accent);
+    }
+</style>

@@ -23,20 +23,11 @@
         schema: SchemaInfo;
         /** Client for fetching data */
         client: SquelClient;
-        /** Database URL */
-
         /** Callback when user wants to navigate to a related row */
         onNavigate?: (table: string, pkValue: Value) => void;
     }
 
-    let {
-        currentTable,
-        currentRow,
-        schema,
-        client,
-
-        onNavigate,
-    }: Props = $props();
+    let { currentTable, currentRow, schema, client, onNavigate }: Props = $props();
 
     // Track which relations are expanded
     let expandedRelations = $state<Set<string>>(new Set());
@@ -59,7 +50,6 @@
 
             for (const fk of table.foreign_keys) {
                 if (fk.references_table === currentTableName) {
-                    // This table has a FK pointing to us
                     const label = `${table.name} (${fk.columns.join(", ")})`;
                     relations.push({
                         table,
@@ -84,7 +74,6 @@
 
     // Get display column for a table
     function getDisplayColumn(table: TableInfo): string {
-        // Priority: explicit label > name > title > first text column
         const labelCol = table.columns.find((c) => c.label);
         if (labelCol) return labelCol.name;
 
@@ -115,7 +104,6 @@
             expandedRelations.add(key);
             expandedRelations = new Set(expandedRelations);
 
-            // Load data if not already loaded
             if (!relationData.has(key)) {
                 await loadRelationData(relation, key);
             }
@@ -128,7 +116,6 @@
     ): { col: string; refTable: string; refCol: string }[] {
         const results: { col: string; refTable: string; refCol: string }[] = [];
         for (const fk of relation.table.foreign_keys) {
-            // Skip the FK that points to the current table
             if (fk.references_table === currentTable.name) continue;
             for (let i = 0; i < fk.columns.length; i++) {
                 results.push({
@@ -155,7 +142,6 @@
             const pkCol = refTableInfo.columns.find((c) => c.primary_key);
             if (!pkCol) continue;
 
-            // Collect unique PK values to fetch
             const pkValues = new Set<string>();
             for (const row of rows) {
                 const field = row.fields.find((f) => f.name === col);
@@ -166,20 +152,16 @@
 
             if (pkValues.size === 0) continue;
 
-            // Initialize cache for this table
             if (!newLookup.has(refTable)) {
                 newLookup.set(refTable, new Map());
             }
             const tableCache = newLookup.get(refTable)!;
 
-            // Filter out already-cached values
             const uncachedPks = [...pkValues].filter((pk) => !tableCache.has(pk));
             if (uncachedPks.length === 0) continue;
 
-            // Convert to Value array for IN filter
             const inValues = uncachedPks.map((pk) => parsePkValue(pk, pkCol.sql_type));
 
-            // Find display column
             const labelCol = refTableInfo.columns.find((c) => c.label);
             const displayCol =
                 labelCol ??
@@ -253,11 +235,10 @@
         relationData = new Map(relationData);
 
         try {
-            // Build filter: fkColumn = pkValue
             const filters: Filter[] = relation.fkColumns.map((col, i) => ({
                 field: col,
                 op: { tag: "Eq" as const },
-                value: pkValue, // Assuming single-column PK for now
+                value: pkValue,
                 values: [],
             }));
 
@@ -278,7 +259,6 @@
                 });
                 relationData = new Map(relationData);
 
-                // Load FK display values for related rows
                 await loadFkDisplayValues(result.value.rows, relation);
             } else {
                 relationData.set(key, { rows: [], total: null, loading: false });
@@ -291,7 +271,6 @@
         }
     }
 
-    // Format a value for display
     function formatValue(value: Value): string {
         if (value.tag === "Null") return "null";
         if (value.tag === "Bool") return value.value ? "true" : "false";
@@ -304,28 +283,22 @@
         return "";
     }
 
-    // Get field value from row
     function getFieldValue(row: Row, fieldName: string): Value | null {
         return row.fields.find((f) => f.name === fieldName)?.value ?? null;
     }
 
-    // Get PK value from a related row
     function getRowPk(row: Row, table: TableInfo): Value | null {
         const pkCol = table.columns.find((c) => c.primary_key);
         if (!pkCol) return null;
         return getFieldValue(row, pkCol.name);
     }
 
-    // Check if a column should be excluded from display summary
     function isBoringColumn(
         col: { name: string; sql_type: string; primary_key?: boolean },
         relation: IncomingRelation,
     ): boolean {
-        // Skip PKs
         if (col.primary_key) return true;
-        // Skip FK columns pointing back to current table
         if (relation.fkColumns.includes(col.name)) return true;
-        // Skip timestamp columns
         const nameLower = col.name.toLowerCase();
         if (
             nameLower.includes("created_at") ||
@@ -334,16 +307,13 @@
             nameLower.includes("_at")
         )
             return true;
-        // Skip typical metadata columns
         if (nameLower === "metadata" || nameLower === "raw_data") return true;
         return false;
     }
 
-    // Get the best display string for a related row
     function getRowDisplayString(row: Row, relation: IncomingRelation): string {
         const pkCol = relation.table.columns.find((c) => c.primary_key);
 
-        // First check if there's an explicit label column
         const labelCol = relation.table.columns.find((c) => c.label);
         if (labelCol) {
             const labelValue = getFieldValue(row, labelCol.name);
@@ -352,7 +322,6 @@
             }
         }
 
-        // For junction tables, try to show the "other" FK's resolved value
         const otherFks = getOtherFkColumns(relation);
         if (otherFks.length > 0) {
             const displayParts: string[] = [];
@@ -385,8 +354,6 @@
             }
         }
 
-        // For non-junction tables, show interesting columns combined
-        // E.g., for variant_price: "EUR 19.99" instead of just "EUR"
         const interestingCols = relation.table.columns.filter(
             (col) => !isBoringColumn(col, relation),
         );
@@ -396,12 +363,10 @@
             const value = getFieldValue(row, col.name);
             if (value && value.tag !== "Null") {
                 const formatted = formatValue(value);
-                // Skip empty strings
                 if (formatted && formatted !== "null") {
                     valueParts.push(formatted);
                 }
             }
-            // Limit to a few columns
             if (valueParts.length >= 3) break;
         }
 
@@ -409,21 +374,17 @@
             return valueParts.join(" · ");
         }
 
-        // Last resort: show the display column
         const displayCol = getDisplayColumn(relation.table);
         const displayValue = getFieldValue(row, displayCol);
         return displayValue ? formatValue(displayValue) : "(no display value)";
     }
 
-    // Get the best navigation target for a row
-    // For junction tables, navigate to the "other" side instead of the junction record
     function getNavigationTarget(
         row: Row,
         relation: IncomingRelation,
     ): { table: string; pk: Value } | null {
         const otherFks = getOtherFkColumns(relation);
 
-        // If there's exactly one "other" FK, navigate to that target
         if (otherFks.length === 1) {
             const { col, refTable } = otherFks[0];
             const fkValue = getFieldValue(row, col);
@@ -432,7 +393,6 @@
             }
         }
 
-        // Otherwise, navigate to the junction table row itself
         const pk = getRowPk(row, relation.table);
         if (pk) {
             return { table: relation.table.name, pk };
@@ -443,22 +403,17 @@
 </script>
 
 {#if incomingRelations.length > 0}
-    <div class="mt-6 space-y-2">
-        <h3 class="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-            Related Records
-        </h3>
+    <div class="related-tables">
+        <h3 class="section-title">Related Records</h3>
 
         {#each incomingRelations as relation}
             {@const key = `${relation.table.name}:${relation.fkColumns.join(",")}`}
             {@const isExpanded = expandedRelations.has(key)}
             {@const data = relationData.get(key)}
 
-            <div class="bg-card text-card-foreground rounded-lg border overflow-hidden">
-                <button
-                    class="w-full flex items-center gap-2 px-3 py-2 hover:bg-accent/50 transition-colors text-left"
-                    onclick={() => toggleRelation(relation)}
-                >
-                    <span class="text-muted-foreground">
+            <div class="relation-card">
+                <button class="relation-header" onclick={() => toggleRelation(relation)}>
+                    <span class="caret-icon">
                         {#if isExpanded}
                             <CaretDown size={14} />
                         {:else}
@@ -467,60 +422,49 @@
                     </span>
 
                     {#if relation.table.icon}
-                        <DynamicIcon
-                            name={relation.table.icon}
-                            class="w-4 h-4 text-muted-foreground"
-                        />
+                        <DynamicIcon name={relation.table.icon} class="table-icon" />
                     {:else}
-                        <TableIcon size={14} class="text-muted-foreground" />
+                        <TableIcon size={14} class="table-icon" />
                     {/if}
 
-                    <span class="font-medium text-sm">{relation.table.name}</span>
-                    <span class="text-xs text-muted-foreground">
-                        via {relation.fkColumns.join(", ")}
-                    </span>
+                    <span class="table-name">{relation.table.name}</span>
+                    <span class="via-text">via {relation.fkColumns.join(", ")}</span>
 
                     {#if data && !data.loading && data.total !== null}
-                        <span class="ml-auto text-xs text-muted-foreground">
-                            {data.total.toString()}
-                        </span>
+                        <span class="count">{data.total.toString()}</span>
                     {/if}
                 </button>
 
                 {#if isExpanded}
-                    <div class="border-t border-border">
+                    <div class="relation-content">
                         {#if data?.loading}
-                            <div class="px-3 py-2 text-sm text-muted-foreground">Loading...</div>
+                            <div class="loading-message">Loading...</div>
                         {:else if data && data.rows.length > 0}
-                            <div class="divide-y divide-border/50">
+                            <div class="relation-rows">
                                 {#each data.rows as row}
                                     {@const target = getNavigationTarget(row, relation)}
                                     <button
-                                        class="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-accent/30 transition-colors text-left text-sm"
+                                        class="relation-row"
                                         onclick={() =>
                                             target && onNavigate?.(target.table, target.pk)}
                                     >
-                                        <span
-                                            class="text-muted-foreground/70 font-mono text-xs min-w-[2rem]"
-                                        >
+                                        <span class="row-id">
                                             #{target ? formatValue(target.pk) : "?"}
                                         </span>
-                                        <span class="truncate">
+                                        <span class="row-label">
                                             {getRowDisplayString(row, relation)}
                                         </span>
                                     </button>
                                 {/each}
 
                                 {#if data.total !== null && data.total > 10n}
-                                    <div class="px-3 py-1.5 text-xs text-muted-foreground">
+                                    <div class="more-indicator">
                                         +{(data.total - 10n).toString()} more
                                     </div>
                                 {/if}
                             </div>
                         {:else if data}
-                            <div class="px-3 py-2 text-sm text-muted-foreground">
-                                No related records
-                            </div>
+                            <div class="empty-message">No related records</div>
                         {/if}
                     </div>
                 {/if}
@@ -528,3 +472,130 @@
         {/each}
     </div>
 {/if}
+
+<style>
+    .related-tables {
+        margin-top: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .section-title {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--muted-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .relation-card {
+        background-color: var(--card);
+        color: var(--card-foreground);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        overflow: hidden;
+    }
+
+    .relation-header {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        text-align: left;
+        font: inherit;
+        transition: background-color 0.15s;
+    }
+
+    .relation-header:hover {
+        background-color: color-mix(in oklch, var(--accent) 50%, transparent);
+    }
+
+    .caret-icon {
+        color: var(--muted-foreground);
+    }
+
+    .relation-header :global(.table-icon) {
+        width: 1rem;
+        height: 1rem;
+        color: var(--muted-foreground);
+    }
+
+    .table-name {
+        font-weight: 500;
+        font-size: 0.875rem;
+    }
+
+    .via-text {
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+    }
+
+    .count {
+        margin-left: auto;
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+    }
+
+    .relation-content {
+        border-top: 1px solid var(--border);
+    }
+
+    .loading-message,
+    .empty-message {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        color: var(--muted-foreground);
+    }
+
+    .relation-rows {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .relation-rows > * + * {
+        border-top: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
+    }
+
+    .relation-row {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.375rem 0.75rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        text-align: left;
+        font: inherit;
+        font-size: 0.875rem;
+        transition: background-color 0.15s;
+    }
+
+    .relation-row:hover {
+        background-color: color-mix(in oklch, var(--accent) 30%, transparent);
+    }
+
+    .row-id {
+        color: color-mix(in oklch, var(--muted-foreground) 70%, transparent);
+        font-family: ui-monospace, monospace;
+        font-size: 0.75rem;
+        min-width: 2rem;
+    }
+
+    .row-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .more-indicator {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+    }
+</style>
