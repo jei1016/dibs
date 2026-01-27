@@ -8,13 +8,13 @@ docs/.cache/
 docs/.dodeca.db/
 
 # Node
+node_modules/
 packages/*/node_modules/
 examples/*/node_modules/
+pnpm-lock.yaml
 
 # Local env
 examples/.env
 .handoffs
 .tracey/
 .playwright-mcp/
-
-
