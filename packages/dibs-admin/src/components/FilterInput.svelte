@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { ColumnInfo, Filter, FilterOp, Value } from "../types.js";
-    import { Command, Popover, Badge, Button } from "../lib/components/ui/index.js";
+    import { Badge, Button } from "../lib/ui/index.js";
     import { X } from "phosphor-svelte";
 
     interface Props {
@@ -117,8 +117,18 @@
             // For boolean columns
             if (col?.sql_type.toLowerCase().includes("bool")) {
                 return [
-                    { type: "value" as const, value: "true", label: `${ctx.column}${ctx.op}true`, hint: "boolean" },
-                    { type: "value" as const, value: "false", label: `${ctx.column}${ctx.op}false`, hint: "boolean" },
+                    {
+                        type: "value" as const,
+                        value: "true",
+                        label: `${ctx.column}${ctx.op}true`,
+                        hint: "boolean",
+                    },
+                    {
+                        type: "value" as const,
+                        value: "false",
+                        label: `${ctx.column}${ctx.op}false`,
+                        hint: "boolean",
+                    },
                 ];
             }
         }
@@ -280,7 +290,8 @@
     }
 
     function formatFilter(filter: Filter): string {
-        const opSymbol = Object.entries(opToFilterOp).find(([, v]) => v === filter.op.tag)?.[0] ?? ":";
+        const opSymbol =
+            Object.entries(opToFilterOp).find(([, v]) => v === filter.op.tag)?.[0] ?? ":";
         if (filter.op.tag === "IsNull") return `${filter.field}?`;
         if (filter.op.tag === "IsNotNull") return `${filter.field}!`;
         const valueStr =
@@ -311,14 +322,14 @@
     }
 </script>
 
-<div class="space-y-3">
+<div class="filter-input-container">
     {#if filters.length > 0}
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="active-filters">
             {#each filters as filter, i}
-                <Badge variant="secondary" class="gap-1.5 py-1 font-mono text-xs">
+                <Badge variant="secondary" class="filter-badge">
                     {formatFilter(filter)}
                     <button
-                        class="text-muted-foreground hover:text-foreground transition-colors"
+                        class="remove-btn"
                         onclick={() => removeFilter(i)}
                         aria-label="Remove filter"
                     >
@@ -326,13 +337,13 @@
                     </button>
                 </Badge>
             {/each}
-            <Button variant="ghost" size="sm" class="h-6 px-2 text-xs" onclick={clearFilters}>
+            <Button variant="ghost" size="sm" class="clear-btn" onclick={clearFilters}>
                 Clear all
             </Button>
         </div>
     {/if}
 
-    <div class="relative">
+    <div class="input-wrapper">
         <input
             bind:this={inputElement}
             bind:value={inputValue}
@@ -342,34 +353,169 @@
             onkeydown={handleKeydown}
             type="text"
             placeholder="Filter: name~john age>18 status:active"
-            class="w-full h-9 px-3 py-2 text-sm bg-background border border-input rounded-md
-                   placeholder:text-muted-foreground focus:outline-none focus:ring-2
-                   focus:ring-ring focus:border-transparent font-mono"
+            class="filter-input"
         />
 
         {#if showSuggestions && suggestions.length > 0}
-            <div
-                class="absolute top-full left-0 right-0 mt-1 z-50 bg-popover border border-border
-                       rounded-md shadow-lg overflow-hidden"
-            >
-                <div class="max-h-[200px] overflow-y-auto p-1">
+            <div class="suggestions-dropdown">
+                <div class="suggestions-list">
                     {#each suggestions as suggestion, i}
                         <button
-                            class="w-full flex items-center justify-between px-3 py-2 text-sm rounded
-                                   hover:bg-accent hover:text-accent-foreground cursor-pointer
-                                   {i === selectedIndex ? 'bg-accent text-accent-foreground' : ''}"
+                            class="suggestion-item"
+                            class:selected={i === selectedIndex}
                             onmousedown={() => applySuggestion(suggestion)}
                         >
-                            <span class="font-mono">{suggestion.label}</span>
-                            <span class="text-xs text-muted-foreground">{suggestion.hint}</span>
+                            <span class="suggestion-label">{suggestion.label}</span>
+                            <span class="suggestion-hint">{suggestion.hint}</span>
                         </button>
                     {/each}
                 </div>
-                <div class="border-t border-border px-3 py-2 text-xs text-muted-foreground">
-                    <kbd class="px-1 bg-muted rounded">Tab</kbd> to complete,
-                    <kbd class="px-1 bg-muted rounded">Enter</kbd> to apply
+                <div class="suggestions-help">
+                    <kbd>Tab</kbd> to complete,
+                    <kbd>Enter</kbd> to apply
                 </div>
             </div>
         {/if}
     </div>
 </div>
+
+<style>
+    .filter-input-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .active-filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    :global(.filter-badge) {
+        gap: 0.375rem;
+        padding-block: 0.25rem;
+        font-family: ui-monospace, monospace;
+        font-size: 0.75rem;
+    }
+
+    .remove-btn {
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        color: var(--muted-foreground);
+        transition: color 0.15s;
+    }
+
+    .remove-btn:hover {
+        color: var(--foreground);
+    }
+
+    :global(.clear-btn) {
+        height: 1.5rem;
+        padding: 0 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .input-wrapper {
+        position: relative;
+    }
+
+    .filter-input {
+        width: 100%;
+        height: 2.25rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        font-family: ui-monospace, monospace;
+        background-color: var(--background);
+        border: 1px solid var(--input);
+        border-radius: var(--radius-md, 0.375rem);
+        color: var(--foreground);
+        transition:
+            border-color 0.15s,
+            outline 0.15s;
+    }
+
+    .filter-input::placeholder {
+        color: var(--muted-foreground);
+    }
+
+    .filter-input:focus {
+        outline: 2px solid var(--ring);
+        outline-offset: 0;
+        border-color: transparent;
+    }
+
+    .suggestions-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        margin-top: 0.25rem;
+        z-index: 50;
+        background-color: var(--popover);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 0.375rem);
+        box-shadow:
+            0 4px 6px -1px rgb(0 0 0 / 0.1),
+            0 2px 4px -2px rgb(0 0 0 / 0.1);
+        overflow: hidden;
+    }
+
+    .suggestions-list {
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 0.25rem;
+    }
+
+    .suggestion-item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        border-radius: var(--radius-sm, 0.25rem);
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        text-align: left;
+        color: var(--foreground);
+    }
+
+    .suggestion-item:hover,
+    .suggestion-item.selected {
+        background-color: var(--accent);
+        color: var(--accent-foreground);
+    }
+
+    .suggestion-label {
+        font-family: ui-monospace, monospace;
+    }
+
+    .suggestion-hint {
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+    }
+
+    .suggestion-item:hover .suggestion-hint,
+    .suggestion-item.selected .suggestion-hint {
+        color: inherit;
+        opacity: 0.7;
+    }
+
+    .suggestions-help {
+        border-top: 1px solid var(--border);
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+    }
+
+    .suggestions-help kbd {
+        padding: 0.125rem 0.25rem;
+        background-color: var(--muted);
+        border-radius: var(--radius-sm, 0.25rem);
+    }
+</style>

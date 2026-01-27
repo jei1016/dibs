@@ -2,7 +2,7 @@
     import type { CountTile } from "../../types/config.js";
     import type { SchemaInfo, SquelClient } from "../../types.js";
     import { filterConfigsToFilters } from "../../lib/config.js";
-    import { Card } from "../../lib/components/ui/index.js";
+    import { Card } from "../../lib/ui/index.js";
     import DynamicIcon from "../DynamicIcon.svelte";
 
     interface Props {
@@ -72,25 +72,83 @@
     }
 </script>
 
-<Card.Root
-    class="cursor-pointer hover:bg-accent/50 transition-colors"
-    onclick={() => onSelectTable(config.table)}
->
-    <Card.Content class="p-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-muted-foreground">{title}</p>
-                {#if loading}
-                    <p class="text-2xl font-semibold text-muted-foreground">—</p>
-                {:else if error}
-                    <p class="text-sm text-destructive">{error}</p>
-                {:else if count !== null}
-                    <p class="text-2xl font-semibold">{formatCount(count)}</p>
-                {/if}
+<button type="button" class="tile-button" onclick={() => onSelectTable(config.table)}>
+    <Card.Root>
+        <Card.Content class="tile-content">
+            <div class="tile-inner">
+                <div>
+                    <p class="tile-title">{title}</p>
+                    {#if loading}
+                        <p class="tile-count muted">—</p>
+                    {:else if error}
+                        <p class="tile-error">{error}</p>
+                    {:else if count !== null}
+                        <p class="tile-count">{formatCount(count)}</p>
+                    {/if}
+                </div>
+                <div class="tile-icon-wrapper">
+                    <DynamicIcon name={icon} size={24} class="tile-icon" />
+                </div>
             </div>
-            <div class="p-3 rounded-full bg-muted">
-                <DynamicIcon name={icon} size={24} class="text-muted-foreground" />
-            </div>
-        </div>
-    </Card.Content>
-</Card.Root>
+        </Card.Content>
+    </Card.Root>
+</button>
+
+<style>
+    .tile-button {
+        display: block;
+        width: 100%;
+        padding: 0;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        text-align: left;
+    }
+
+    .tile-button:hover :global(.card) {
+        background-color: oklch(from var(--accent) l c h / 0.5);
+    }
+
+    :global(.tile-content) {
+        padding: 1.5rem;
+    }
+
+    .tile-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .tile-title {
+        font-size: 0.875rem;
+        color: var(--muted-foreground);
+        margin: 0;
+    }
+
+    .tile-count {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--foreground);
+    }
+
+    .tile-count.muted {
+        color: var(--muted-foreground);
+    }
+
+    .tile-error {
+        font-size: 0.875rem;
+        color: var(--destructive);
+        margin: 0;
+    }
+
+    .tile-icon-wrapper {
+        padding: 0.75rem;
+        border-radius: 9999px;
+        background-color: var(--muted);
+    }
+
+    :global(.tile-icon) {
+        color: var(--muted-foreground);
+    }
+</style>

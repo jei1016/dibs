@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Plus, X } from "phosphor-svelte";
     import type { ColumnInfo, Filter, FilterOp, Value } from "../types.js";
-    import { Button, Input, Select, Badge } from "../lib/components/ui/index.js";
+    import { Button, Input, Badge, Select } from "../lib/ui/index.js";
 
     interface Props {
         columns: ColumnInfo[];
@@ -139,12 +139,12 @@
 </script>
 
 {#if filters.length > 0}
-    <div class="flex flex-wrap items-center gap-3 mb-6">
+    <div class="active-filters">
         {#each filters as filter, i}
-            <Badge variant="secondary" class="gap-2 py-1.5">
+            <Badge variant="secondary" class="filter-badge">
                 {formatFilterDisplay(filter)}
                 <button
-                    class="text-muted-foreground hover:text-foreground transition-colors"
+                    class="remove-filter"
                     onclick={() => onRemoveFilter(i)}
                     aria-label="Remove filter"
                 >
@@ -156,9 +156,9 @@
     </div>
 {/if}
 
-<div class="flex flex-wrap items-center gap-3 mb-6">
+<div class="filter-row">
     <Select.Root type="single" bind:value={selectedField}>
-        <Select.Trigger class="w-[180px]">
+        <Select.Trigger class="select-field">
             {selectedField || "Select column..."}
         </Select.Trigger>
         <Select.Content>
@@ -169,7 +169,7 @@
     </Select.Root>
 
     <Select.Root type="single" bind:value={selectedOp}>
-        <Select.Trigger class="w-[120px]">
+        <Select.Trigger class="select-op">
             {opLabels[selectedOp]}
         </Select.Trigger>
         <Select.Content>
@@ -185,7 +185,7 @@
             bind:value={filterValue}
             placeholder="Value..."
             onkeydown={handleKeydown}
-            class="flex-1 min-w-[150px]"
+            class="value-input"
         />
     {/if}
 
@@ -194,3 +194,52 @@
         Add Filter
     </Button>
 </div>
+
+<style>
+    .active-filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    :global(.filter-badge) {
+        gap: 0.5rem;
+        padding-block: 0.375rem;
+    }
+
+    .remove-filter {
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        color: var(--muted-foreground);
+        transition: color 0.15s;
+    }
+
+    .remove-filter:hover {
+        color: var(--foreground);
+    }
+
+    .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    :global(.select-field) {
+        width: 180px;
+    }
+
+    :global(.select-op) {
+        width: 120px;
+    }
+
+    :global(.value-input) {
+        flex: 1;
+        min-width: 150px;
+    }
+</style>

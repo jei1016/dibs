@@ -1,12 +1,24 @@
 <script lang="ts">
     import { Trash, ArrowLeft, FloppyDisk, ArrowCounterClockwise } from "phosphor-svelte";
-    import type { Row, RowField, ColumnInfo, Value, TableInfo, SchemaInfo, SquelClient } from "../types.js";
+    import type {
+        Row,
+        RowField,
+        ColumnInfo,
+        Value,
+        TableInfo,
+        SchemaInfo,
+        SquelClient,
+    } from "../types.js";
     import type { DibsAdminConfig, DetailConfig, FieldGroupConfig } from "../types/config.js";
-    import { Button } from "../lib/components/ui/index.js";
-    import { Label } from "../lib/components/ui/index.js";
-    import { Tooltip } from "../lib/components/ui/index.js";
+    import { Button, Label, Tooltip } from "../lib/ui/index.js";
     import { Info } from "phosphor-svelte";
-    import { getDetailConfig, isFieldReadOnly, isFieldHidden, shouldShowRelations, getTableLabel } from "../lib/config.js";
+    import {
+        getDetailConfig,
+        isFieldReadOnly,
+        isFieldHidden,
+        shouldShowRelations,
+        getTableLabel,
+    } from "../lib/config.js";
     import { getFkForColumn, getTableByName } from "../lib/fk-utils.js";
     import InlineField from "./InlineField.svelte";
     import FkSelect from "./FkSelect.svelte";
@@ -20,7 +32,7 @@
         table: TableInfo;
         schema: SchemaInfo;
         client: SquelClient;
-        
+
         tableName: string;
         config?: DibsAdminConfig;
         onFieldSave?: (fieldName: string, newValue: Value) => void | Promise<void>;
@@ -36,7 +48,7 @@
         table,
         schema,
         client,
-        
+
         tableName,
         config,
         onFieldSave,
@@ -52,9 +64,9 @@
     // Get the display/label value for this record
     let recordDisplayValue = $derived.by(() => {
         // First, look for a column marked with dibs::label
-        const labelCol = columns.find(c => c.label);
+        const labelCol = columns.find((c) => c.label);
         if (labelCol) {
-            const field = row.fields.find(f => f.name === labelCol.name);
+            const field = row.fields.find((f) => f.name === labelCol.name);
             if (field && field.value.tag !== "Null") {
                 return valueToString(field.value);
             }
@@ -62,9 +74,9 @@
         // Fallback: look for common display column names
         const displayNames = ["name", "title", "display_name", "username", "label", "email"];
         for (const name of displayNames) {
-            const col = columns.find(c => c.name === name);
+            const col = columns.find((c) => c.name === name);
             if (col) {
-                const field = row.fields.find(f => f.name === name);
+                const field = row.fields.find((f) => f.name === name);
                 if (field && field.value.tag !== "Null") {
                     return valueToString(field.value);
                 }
@@ -88,7 +100,7 @@
     let changesList = $derived.by(() => {
         const list: { field: string; label: string; oldValue: string; newValue: string }[] = [];
         for (const [fieldName, newValue] of pendingChanges) {
-            const col = columns.find(c => c.name === fieldName);
+            const col = columns.find((c) => c.name === fieldName);
             const oldValue = getOriginalFieldValue(fieldName);
             list.push({
                 field: fieldName,
@@ -184,7 +196,7 @@
     }
 
     function getControlType(
-        col: ColumnInfo
+        col: ColumnInfo,
     ): "checkbox" | "number" | "datetime" | "textarea" | "text" | "enum" | "codemirror" {
         const typeLower = col.sql_type.toLowerCase();
 
@@ -224,7 +236,7 @@
     }
 
     function mapControlTypeToInlineType(
-        controlType: ReturnType<typeof getControlType>
+        controlType: ReturnType<typeof getControlType>,
     ): "text" | "number" | "boolean" | "datetime" | "enum" | "textarea" | "codemirror" {
         switch (controlType) {
             case "checkbox":
@@ -284,7 +296,7 @@
         try {
             // Save each changed field
             for (const [fieldName, newStrValue] of pendingChanges) {
-                const col = columns.find(c => c.name === fieldName);
+                const col = columns.find((c) => c.name === fieldName);
                 if (col) {
                     const newValue = stringToValue(newStrValue, col.sql_type);
                     await onFieldSave?.(fieldName, newValue);
@@ -336,25 +348,25 @@
     }
 </script>
 
-<div class="h-full max-h-screen flex flex-col bg-background overflow-hidden">
+<div class="detail-panel">
     <!-- Header with back button -->
-    <header class="flex items-center justify-between gap-4 px-6 md:px-8 py-4 border-b border-border shrink-0">
-        <div class="flex items-center gap-4">
+    <header class="panel-header">
+        <div class="header-left">
             <Button variant="ghost" size="icon" onclick={onClose}>
                 <ArrowLeft size={20} />
             </Button>
             <div>
-                <h1 class="text-lg font-medium text-foreground flex items-center gap-2">
-                    <DynamicIcon name={table.icon ?? "table"} size={20} class="opacity-70" />
+                <h1 class="panel-title">
+                    <DynamicIcon name={table.icon ?? "table"} size={20} class="title-icon" />
                     {recordDisplayValue ?? tableName}
                 </h1>
             </div>
         </div>
 
         <!-- Actions -->
-        <div class="flex items-center gap-3">
+        <div class="header-actions">
             {#if saveError}
-                <span class="text-xs text-destructive">{saveError}</span>
+                <span class="error-text">{saveError}</span>
             {/if}
 
             {#if hasChanges}
@@ -378,8 +390,8 @@
     </header>
 
     <!-- Scrollable content -->
-    <div class="flex-1 min-h-0 overflow-y-auto p-6 md:p-8">
-        <div class="max-w-2xl space-y-1">
+    <div class="panel-content">
+        <div class="fields-container">
             {#each visibleColumns() as item}
                 {#if isColumnInfo(item)}
                     {@const col = item}
@@ -390,45 +402,59 @@
                     {@const langIcon = getLangIcon(col.lang)}
                     {@const fieldValue = getFieldValue(col.name)}
                     {@const isModified = pendingChanges.has(col.name)}
-                    {@const tooltipContent = [col.sql_type, col.primary_key ? "primary key" : null, col.doc].filter(Boolean).join(" · ")}
+                    {@const tooltipContent = [
+                        col.sql_type,
+                        col.primary_key ? "primary key" : null,
+                        col.doc,
+                    ]
+                        .filter(Boolean)
+                        .join(" · ")}
 
-                    <div class="py-3 border-b border-border/50 last:border-b-0 {isModified ? 'bg-accent/20 -mx-3 px-3 rounded-md' : ''}">
-                        <div class="flex items-start gap-4">
-                            <div class="w-40 shrink-0 pt-2">
-                                <div class="flex items-center gap-1.5">
+                    <div class="field-row" class:modified={isModified}>
+                        <div class="field-row-inner">
+                            <div class="field-label-col">
+                                <div class="field-label-row">
                                     {#if langIcon}
-                                        <DynamicIcon name={langIcon} size={14} class="text-muted-foreground/60" />
+                                        <DynamicIcon name={langIcon} size={14} class="field-icon" />
                                     {:else if col.icon}
-                                        <DynamicIcon name={col.icon} size={14} class="text-muted-foreground/60" />
+                                        <DynamicIcon name={col.icon} size={14} class="field-icon" />
                                     {/if}
-                                    <Label class="text-sm font-medium {isModified ? 'text-primary' : ''}">{col.doc || col.name}</Label>
+                                    <Label class={isModified ? "modified-label" : ""}
+                                        >{col.doc || col.name}</Label
+                                    >
                                     {#if isModified}
-                                        <span class="text-[10px] text-primary font-medium">modified</span>
+                                        <span class="modified-indicator">modified</span>
                                     {/if}
                                     <Tooltip.Root>
                                         <Tooltip.Trigger>
-                                            {#snippet child({ props })}
-                                                {@const { tabindex: _, ...restProps } = props}
-                                                <span {...restProps} class="cursor-help" tabindex={-1}>
-                                                    <Info size={12} class="text-muted-foreground/40 hover:text-muted-foreground" />
+                                            {#snippet children({ props })}
+                                                {@const { tabindex: _, ...restProps } =
+                                                    props as Record<string, unknown>}
+                                                <span
+                                                    {...restProps}
+                                                    class="info-trigger"
+                                                    tabindex={-1}
+                                                >
+                                                    <Info size={12} />
                                                 </span>
                                             {/snippet}
                                         </Tooltip.Trigger>
                                         <Tooltip.Content>
-                                            <p class="text-xs"><span class="font-mono">{col.name}</span> · {tooltipContent}</p>
+                                            <p class="tooltip-text">
+                                                <span class="mono">{col.name}</span> · {tooltipContent}
+                                            </p>
                                         </Tooltip.Content>
                                     </Tooltip.Root>
                                 </div>
                             </div>
 
-                            <div class="flex-1 min-w-0">
+                            <div class="field-value-col">
                                 {#if fkInfo && !readOnly}
                                     <!-- FK field with special handling -->
                                     <FkSelect
                                         value={fieldValue}
                                         fkTable={fkInfo.fkTable}
                                         {client}
-                                        
                                         disabled={readOnly}
                                         onchange={(v) => handleFieldChange(col.name, v)}
                                     />
@@ -449,11 +475,11 @@
                 {:else}
                     <!-- Field group -->
                     {@const group = item}
-                    <details class="py-3 border-b border-border/50" open={!group.collapsed}>
-                        <summary class="cursor-pointer text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
+                    <details class="field-group" open={!group.collapsed}>
+                        <summary class="group-title">
                             {group.title}
                         </summary>
-                        <div class="space-y-1 pl-4">
+                        <div class="group-fields">
                             {#each group.fields as fieldName}
                                 {@const col = columns.find((c) => c.name === fieldName)}
                                 {#if col}
@@ -464,25 +490,27 @@
                                     {@const fieldValue = getFieldValue(col.name)}
                                     {@const isModified = pendingChanges.has(col.name)}
 
-                                    <div class="py-2 {isModified ? 'bg-accent/20 -mx-3 px-3 rounded-md' : ''}">
-                                        <div class="flex items-start gap-4">
-                                            <div class="w-36 shrink-0 pt-2">
-                                                <Label class="text-sm font-medium {isModified ? 'text-primary' : ''}">
+                                    <div class="group-field-row" class:modified={isModified}>
+                                        <div class="field-row-inner">
+                                            <div class="group-field-label">
+                                                <Label class={isModified ? "modified-label" : ""}>
                                                     {col.doc || col.name}
                                                     {#if isModified}
-                                                        <span class="text-[10px] text-primary font-medium ml-1">modified</span>
+                                                        <span class="modified-indicator"
+                                                            >modified</span
+                                                        >
                                                     {/if}
                                                 </Label>
                                             </div>
-                                            <div class="flex-1 min-w-0">
+                                            <div class="field-value-col">
                                                 {#if fkInfo && !readOnly}
                                                     <FkSelect
                                                         value={fieldValue}
                                                         fkTable={fkInfo.fkTable}
                                                         {client}
-                                                        
                                                         disabled={readOnly}
-                                                        onchange={(v) => handleFieldChange(col.name, v)}
+                                                        onchange={(v) =>
+                                                            handleFieldChange(col.name, v)}
                                                     />
                                                 {:else}
                                                     <InlineField
@@ -492,7 +520,8 @@
                                                         placeholder={col.nullable ? "null" : ""}
                                                         enumOptions={col.enum_variants}
                                                         lang={col.lang}
-                                                        onchange={(v) => handleFieldChange(col.name, v)}
+                                                        onchange={(v) =>
+                                                            handleFieldChange(col.name, v)}
                                                     />
                                                 {/if}
                                             </div>
@@ -508,13 +537,12 @@
 
         <!-- Related tables section -->
         {#if shouldShowRelations(detailConfig)}
-            <div class="mt-8 max-w-2xl">
+            <div class="related-section">
                 <RelatedTables
                     currentTable={table}
                     currentRow={row}
                     {schema}
                     {client}
-                    
                     {onNavigate}
                 />
             </div>
@@ -530,3 +558,192 @@
     onconfirm={confirmSave}
     oncancel={() => (showConfirmDialog = false)}
 />
+
+<style>
+    .detail-panel {
+        height: 100%;
+        max-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background-color: var(--background);
+        overflow: hidden;
+    }
+
+    .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+
+    @media (min-width: 768px) {
+        .panel-header {
+            padding: 1rem 2rem;
+        }
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .panel-title {
+        font-size: 1.125rem;
+        font-weight: 500;
+        color: var(--foreground);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+    }
+
+    :global(.title-icon) {
+        opacity: 0.7;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .error-text {
+        font-size: 0.75rem;
+        color: var(--destructive);
+    }
+
+    .panel-content {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+        .panel-content {
+            padding: 2rem;
+        }
+    }
+
+    .fields-container {
+        max-width: 42rem;
+    }
+
+    .field-row {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid oklch(from var(--border) l c h / 0.5);
+    }
+
+    .field-row:last-child {
+        border-bottom: none;
+    }
+
+    .field-row.modified {
+        background-color: oklch(from var(--accent) l c h / 0.2);
+        margin: 0 -0.75rem;
+        padding: 0.75rem;
+        border-radius: var(--radius-md, 0.375rem);
+    }
+
+    .field-row-inner {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .field-label-col {
+        width: 10rem;
+        flex-shrink: 0;
+        padding-top: 0.5rem;
+    }
+
+    .field-label-row {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    :global(.field-icon) {
+        color: var(--muted-foreground);
+        opacity: 0.6;
+    }
+
+    :global(.modified-label) {
+        color: var(--primary);
+    }
+
+    .modified-indicator {
+        font-size: 0.625rem;
+        color: var(--primary);
+        font-weight: 500;
+    }
+
+    .info-trigger {
+        cursor: help;
+        color: var(--muted-foreground);
+        opacity: 0.4;
+        transition: opacity 0.15s;
+    }
+
+    .info-trigger:hover {
+        opacity: 1;
+    }
+
+    .tooltip-text {
+        font-size: 0.75rem;
+    }
+
+    .mono {
+        font-family: ui-monospace, monospace;
+    }
+
+    .field-value-col {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .field-group {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid oklch(from var(--border) l c h / 0.5);
+    }
+
+    .group-title {
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--muted-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+    }
+
+    .group-fields {
+        padding-left: 1rem;
+    }
+
+    .group-field-row {
+        padding: 0.5rem 0;
+    }
+
+    .group-field-row.modified {
+        background-color: oklch(from var(--accent) l c h / 0.2);
+        margin: 0 -0.75rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: var(--radius-md, 0.375rem);
+    }
+
+    .group-field-label {
+        width: 9rem;
+        flex-shrink: 0;
+        padding-top: 0.5rem;
+    }
+
+    .related-section {
+        margin-top: 2rem;
+        max-width: 42rem;
+    }
+</style>

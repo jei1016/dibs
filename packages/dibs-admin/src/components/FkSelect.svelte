@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { TableInfo, SquelClient, ListRequest } from "../types.js";
     import { getDisplayColumn, getPkValue, formatValueForDisplay } from "../lib/fk-utils.js";
-    import { Select } from "../lib/components/ui/index.js";
+    import { Select } from "../lib/ui/index.js";
 
     interface Props {
         value: string;
@@ -83,11 +83,9 @@
 </script>
 
 {#if loading}
-    <div class="h-9 flex items-center px-3 bg-muted text-muted-foreground text-sm">
-        Loading options...
-    </div>
+    <div class="loading-state">Loading options...</div>
 {:else if error}
-    <div class="text-destructive text-sm">{error}</div>
+    <div class="error-state">{error}</div>
 {:else}
     <Select.Root
         type="single"
@@ -98,7 +96,7 @@
             onchange(v);
         }}
     >
-        <Select.Trigger class="w-full">
+        <Select.Trigger class="full-width">
             {#if value}
                 {options.find((o) => o.value === value)?.label ?? value}
             {:else}
@@ -113,3 +111,25 @@
         </Select.Content>
     </Select.Root>
 {/if}
+
+<style>
+    .loading-state {
+        height: 2.25rem;
+        display: flex;
+        align-items: center;
+        padding: 0 0.75rem;
+        background-color: var(--muted);
+        color: var(--muted-foreground);
+        font-size: 0.875rem;
+        border-radius: var(--radius-md, 0.375rem);
+    }
+
+    .error-state {
+        color: var(--destructive);
+        font-size: 0.875rem;
+    }
+
+    :global(.full-width) {
+        width: 100%;
+    }
+</style>

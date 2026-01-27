@@ -2,7 +2,7 @@
     import { ArrowRight } from "phosphor-svelte";
     import type { LatestRecordsTile } from "../../types/config.js";
     import type { SchemaInfo, SquelClient, Row, Value } from "../../types.js";
-    import { Card } from "../../lib/components/ui/index.js";
+    import { Card } from "../../lib/ui/index.js";
     import DynamicIcon from "../DynamicIcon.svelte";
 
     interface Props {
@@ -161,39 +161,36 @@
     }
 </script>
 
-<Card.Root class="flex flex-col">
-    <Card.Header class="pb-3">
-        <Card.Title class="flex items-center justify-between text-sm font-medium">
-            <span class="flex items-center gap-2">
+<Card.Root class="tile-card">
+    <Card.Header class="tile-header">
+        <Card.Title class="tile-title">
+            <span class="title-content">
                 {#if tableInfo?.icon}
-                    <DynamicIcon name={tableInfo.icon} size={16} class="text-muted-foreground" />
+                    <DynamicIcon name={tableInfo.icon} size={16} class="title-icon" />
                 {/if}
                 {title}
             </span>
-            <button
-                class="text-muted-foreground hover:text-foreground transition-colors"
-                onclick={() => onSelectTable(config.table)}
-            >
+            <button class="view-all-btn" onclick={() => onSelectTable(config.table)}>
                 <ArrowRight size={16} />
             </button>
         </Card.Title>
     </Card.Header>
-    <Card.Content class="flex-1 pt-0">
+    <Card.Content class="tile-content">
         {#if loading}
-            <div class="text-sm text-muted-foreground">Loading...</div>
+            <div class="status-text">Loading...</div>
         {:else if error}
-            <div class="text-sm text-destructive">{error}</div>
+            <div class="error-text">{error}</div>
         {:else if rows.length === 0}
-            <div class="text-sm text-muted-foreground/60">No records</div>
+            <div class="empty-text">No records</div>
         {:else}
-            <ul class="space-y-2">
+            <ul class="records-list">
                 {#each rows as row}
                     {@const label = getRowLabel(row)}
                     {@const subtitle = getRowSubtitle(row)}
-                    <li class="text-sm">
-                        <div class="truncate">{label}</div>
+                    <li class="record-item">
+                        <div class="record-label">{label}</div>
                         {#if subtitle}
-                            <div class="text-xs text-muted-foreground">{subtitle}</div>
+                            <div class="record-subtitle">{subtitle}</div>
                         {/if}
                     </li>
                 {/each}
@@ -201,3 +198,89 @@
         {/if}
     </Card.Content>
 </Card.Root>
+
+<style>
+    :global(.tile-card) {
+        display: flex;
+        flex-direction: column;
+    }
+
+    :global(.tile-header) {
+        padding-bottom: 0.75rem;
+    }
+
+    :global(.tile-title) {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .title-content {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    :global(.title-icon) {
+        color: var(--muted-foreground);
+    }
+
+    .view-all-btn {
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        color: var(--muted-foreground);
+        transition: color 0.15s;
+    }
+
+    .view-all-btn:hover {
+        color: var(--foreground);
+    }
+
+    :global(.tile-content) {
+        flex: 1;
+        padding-top: 0;
+    }
+
+    .status-text {
+        font-size: 0.875rem;
+        color: var(--muted-foreground);
+    }
+
+    .error-text {
+        font-size: 0.875rem;
+        color: var(--destructive);
+    }
+
+    .empty-text {
+        font-size: 0.875rem;
+        color: oklch(from var(--muted-foreground) l c h / 0.6);
+    }
+
+    .records-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .record-item {
+        font-size: 0.875rem;
+    }
+
+    .record-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .record-subtitle {
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+    }
+</style>

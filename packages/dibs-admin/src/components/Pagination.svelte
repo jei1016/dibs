@@ -1,6 +1,6 @@
 <script lang="ts">
     import { CaretLeft, CaretRight } from "phosphor-svelte";
-    import { Button } from "../lib/components/ui/index.js";
+    import { Button } from "../lib/ui/index.js";
 
     interface Props {
         offset: number;
@@ -19,12 +19,12 @@
     let end = $derived(offset + rowCount);
 </script>
 
-<div class="flex justify-center items-center gap-6 mt-8 pt-6">
+<div class="pagination">
     <Button variant="ghost" size="sm" onclick={onPrev} disabled={!hasPrev}>
         <CaretLeft size={14} />
         Prev
     </Button>
-    <span class="text-muted-foreground text-sm">
+    <span class="pagination-info">
         {start}–{end}
         {#if total !== null}
             / {total.toString()}
@@ -35,3 +35,19 @@
         <CaretRight size={14} />
     </Button>
 </div>
+
+<style>
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1.5rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+    }
+
+    .pagination-info {
+        color: var(--muted-foreground);
+        font-size: 0.875rem;
+    }
+</style>

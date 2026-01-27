@@ -1,9 +1,23 @@
 <script lang="ts">
     import { Pencil } from "phosphor-svelte";
-    import { Input, NumberInput, Checkbox, Textarea, Select, DatetimeInput } from "../lib/components/ui/index.js";
+    import {
+        Input,
+        NumberInput,
+        Checkbox,
+        Textarea,
+        Select,
+        DatetimeInput,
+    } from "../lib/ui/index.js";
     import CodeMirrorEditor from "./CodeMirrorEditor.svelte";
 
-    type FieldType = "text" | "number" | "boolean" | "datetime" | "enum" | "textarea" | "codemirror";
+    type FieldType =
+        | "text"
+        | "number"
+        | "boolean"
+        | "datetime"
+        | "enum"
+        | "textarea"
+        | "codemirror";
 
     interface Props {
         value: string;
@@ -112,17 +126,17 @@
     }
 </script>
 
-<div class="inline-field group min-h-[36px] flex items-center">
+<div class="inline-field" class:editing={isEditing}>
     {#if isEditing}
-        <div class="flex-1 flex items-center gap-2">
+        <div class="edit-container">
             {#if type === "boolean"}
-                <div class="flex items-center gap-3 h-9 px-3">
+                <div class="bool-edit">
                     <Checkbox
                         checked={getBoolValue()}
                         onCheckedChange={(checked) => setBoolValue(checked === true)}
                         {disabled}
                     />
-                    <span class="text-sm">{getBoolValue() ? "Yes" : "No"}</span>
+                    <span class="bool-label">{getBoolValue() ? "Yes" : "No"}</span>
                 </div>
             {:else if type === "number"}
                 <Input
@@ -133,14 +147,10 @@
                     onblur={handleBlur}
                     {placeholder}
                     {disabled}
-                    class="flex-1"
+                    class="edit-input"
                 />
             {:else if type === "datetime"}
-                <DatetimeInput
-                    value={editValue}
-                    onchange={handleDatetimeChange}
-                    {disabled}
-                />
+                <DatetimeInput value={editValue} onchange={handleDatetimeChange} {disabled} />
             {:else if type === "enum"}
                 <Select.Root
                     type="single"
@@ -148,7 +158,7 @@
                     {disabled}
                     onValueChange={handleEnumChange}
                 >
-                    <Select.Trigger class="w-full">
+                    <Select.Trigger class="full-width">
                         {editValue || placeholder || "— Select —"}
                     </Select.Trigger>
                     <Select.Content>
@@ -159,7 +169,7 @@
                     </Select.Content>
                 </Select.Root>
             {:else if type === "textarea"}
-                <div class="flex-1 flex flex-col gap-2">
+                <div class="textarea-container">
                     <Textarea
                         value={editValue}
                         oninput={(e) => (editValue = e.currentTarget.value)}
@@ -171,7 +181,7 @@
                     />
                 </div>
             {:else if type === "codemirror"}
-                <div class="flex-1 flex flex-col gap-2">
+                <div class="codemirror-container">
                     <CodeMirrorEditor
                         value={editValue}
                         {lang}
@@ -193,7 +203,7 @@
                     onblur={handleBlur}
                     {placeholder}
                     {disabled}
-                    class="flex-1"
+                    class="edit-input"
                 />
             {/if}
         </div>
@@ -201,21 +211,104 @@
         <!-- Display mode -->
         <button
             type="button"
-            class="flex-1 text-left px-3 py-2 min-h-[36px] rounded-md text-sm transition-colors
-                   {readOnly || disabled
-                ? 'text-muted-foreground cursor-default'
-                : 'hover:bg-accent/50 cursor-pointer group-hover:bg-accent/30'}"
+            class="display-value"
+            class:readonly={readOnly || disabled}
             onclick={startEdit}
             disabled={readOnly || disabled}
         >
-            <span class={value === "" || value === "null" ? "text-muted-foreground/60" : ""}>
+            <span class:empty={value === "" || value === "null"}>
                 {formatDisplayValue(value)}
             </span>
         </button>
         {#if !readOnly && !disabled}
-            <span class="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/60 pr-2">
+            <span class="edit-icon">
                 <Pencil size={14} />
             </span>
         {/if}
     {/if}
 </div>
+
+<style>
+    .inline-field {
+        min-height: 2.25rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .edit-container {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .bool-edit {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        height: 2.25rem;
+        padding: 0 0.75rem;
+    }
+
+    .bool-label {
+        font-size: 0.875rem;
+    }
+
+    :global(.edit-input) {
+        flex: 1;
+    }
+
+    :global(.full-width) {
+        width: 100%;
+    }
+
+    .textarea-container,
+    .codemirror-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .display-value {
+        flex: 1;
+        text-align: left;
+        padding: 0.5rem 0.75rem;
+        min-height: 2.25rem;
+        border-radius: var(--radius-md, 0.375rem);
+        font-size: 0.875rem;
+        transition: background-color 0.15s;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: var(--foreground);
+    }
+
+    .display-value:hover:not(.readonly) {
+        background-color: oklch(from var(--accent) l c h / 0.5);
+    }
+
+    .inline-field:hover .display-value:not(.readonly) {
+        background-color: oklch(from var(--accent) l c h / 0.3);
+    }
+
+    .display-value.readonly {
+        color: var(--muted-foreground);
+        cursor: default;
+    }
+
+    .display-value .empty {
+        color: oklch(from var(--muted-foreground) l c h / 0.6);
+    }
+
+    .edit-icon {
+        opacity: 0;
+        transition: opacity 0.15s;
+        color: oklch(from var(--muted-foreground) l c h / 0.6);
+        padding-right: 0.5rem;
+    }
+
+    .inline-field:hover .edit-icon {
+        opacity: 1;
+    }
+</style>

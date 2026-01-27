@@ -16,16 +16,18 @@
         SchemaInfo,
         SquelClient,
     } from "../types.js";
-    import { Button } from "../lib/components/ui/index.js";
-    import { Input } from "../lib/components/ui/index.js";
-    import { NumberInput } from "../lib/components/ui/index.js";
-    import { DatetimeInput } from "../lib/components/ui/index.js";
-    import { Textarea } from "../lib/components/ui/index.js";
-    import { Checkbox } from "../lib/components/ui/index.js";
-    import { Label } from "../lib/components/ui/index.js";
-    import { Dialog } from "../lib/components/ui/index.js";
-    import { Select } from "../lib/components/ui/index.js";
-    import { Tooltip } from "../lib/components/ui/index.js";
+    import {
+        Button,
+        Input,
+        NumberInput,
+        DatetimeInput,
+        Textarea,
+        Checkbox,
+        Label,
+        Dialog,
+        Select,
+        Tooltip,
+    } from "../lib/ui/index.js";
     import { getFkForColumn, getTableByName } from "../lib/fk-utils.js";
     import FkSelect from "./FkSelect.svelte";
     import DynamicIcon from "./DynamicIcon.svelte";
@@ -354,22 +356,22 @@
                 .join(" · ")}
             {@const langIcon = getLangIcon(col.lang)}
 
-            <div class="space-y-1">
-                <div class="flex items-center gap-1.5">
+            <div class="field-group">
+                <div class="field-label-row">
                     {#if langIcon}
-                        <DynamicIcon name={langIcon} size={14} class="text-muted-foreground/60" />
+                        <DynamicIcon name={langIcon} size={14} class="field-icon" />
                     {:else if col.icon}
-                        <DynamicIcon name={col.icon} size={14} class="text-muted-foreground/60" />
+                        <DynamicIcon name={col.icon} size={14} class="field-icon" />
                     {/if}
-                    <Label for={col.name} class="text-sm font-medium">{col.doc || col.name}</Label>
+                    <Label for={col.name}>{col.doc || col.name}</Label>
                     {#if required}
-                        <Asterisk size={10} class="text-destructive" weight="bold" />
+                        <Asterisk size={10} class="required-indicator" weight="bold" />
                     {/if}
                     {#if dirty}
-                        <span class="text-[10px] text-chart-4 font-medium">modified</span>
+                        <span class="modified-indicator">modified</span>
                         <button
                             type="button"
-                            class="text-muted-foreground/60 hover:text-foreground transition-colors"
+                            class="revert-btn"
                             onclick={() => revertField(col.name)}
                             title="Revert to original value"
                         >
@@ -378,29 +380,29 @@
                     {/if}
                     <Tooltip.Root>
                         <Tooltip.Trigger>
-                            {#snippet child({ props })}
-                                {@const { tabindex: _, ...restProps } = props}
-                                <span {...restProps} class="cursor-help" tabindex={-1}>
-                                    <Info
-                                        size={12}
-                                        class="text-muted-foreground/40 hover:text-muted-foreground"
-                                    />
+                            {#snippet children({ props })}
+                                {@const { tabindex: _, ...restProps } = props as Record<
+                                    string,
+                                    unknown
+                                >}
+                                <span {...restProps} class="info-trigger" tabindex={-1}>
+                                    <Info size={12} />
                                 </span>
                             {/snippet}
                         </Tooltip.Trigger>
                         <Tooltip.Content>
-                            <p class="text-xs">
-                                <span class="font-mono">{col.name}</span> · {tooltipContent}
+                            <p class="tooltip-text">
+                                <span class="mono">{col.name}</span> · {tooltipContent}
                             </p>
                         </Tooltip.Content>
                     </Tooltip.Root>
                 </div>
                 {#if hasError}
-                    <p class="text-xs text-destructive">{validationErrors.get(col.name)}</p>
+                    <p class="error-text">{validationErrors.get(col.name)}</p>
                 {/if}
 
                 {#if controlType === "checkbox"}
-                    <div class="flex items-center gap-3 h-9">
+                    <div class="checkbox-row">
                         <Checkbox
                             id={col.name}
                             checked={getBooleanValue(col.name)}
@@ -408,14 +410,14 @@
                                 setBooleanValue(col.name, checked === true)}
                             {disabled}
                         />
-                        <span class="text-sm text-muted-foreground">
+                        <span class="checkbox-value">
                             {getBooleanValue(col.name) ? "true" : "false"}
                         </span>
                     </div>
                 {:else if controlType === "number"}
                     {#if fkInfo && client && !disabled}
-                        <div class="flex items-center gap-2">
-                            <div class="flex-1">
+                        <div class="fk-row">
+                            <div class="fk-select">
                                 <FkSelect
                                     value={getFormValue(col.name)}
                                     fkTable={fkInfo.fkTable}
@@ -424,7 +426,7 @@
                                     onchange={(v) => setFormValue(col.name, v)}
                                 />
                             </div>
-                            <span class="text-xs text-muted-foreground flex items-center gap-1">
+                            <span class="fk-indicator">
                                 <ArrowSquareOut size={12} />
                                 {fkInfo.fkTable.name}
                             </span>
@@ -461,7 +463,7 @@
                         {disabled}
                         onValueChange={(v: string) => setFormValue(col.name, v)}
                     >
-                        <Select.Trigger class="w-full">
+                        <Select.Trigger class="full-width">
                             {getFormValue(col.name) || "-- None --"}
                         </Select.Trigger>
                         <Select.Content>
@@ -498,7 +500,7 @@
 
 {#snippet footer()}
     {#if row && onDelete}
-        <div class="mr-auto">
+        <div class="footer-left">
             <Button variant="destructive" onclick={handleDelete} disabled={deleting}>
                 <Trash size={16} />
                 {deleting ? "Deleting..." : "Delete"}
@@ -507,7 +509,7 @@
     {/if}
 
     <!-- Status indicator -->
-    <div class="flex-1 text-xs text-muted-foreground">
+    <div class="status-text">
         {#if row}
             {#if dirtyCount > 0}
                 {dirtyCount} field{dirtyCount === 1 ? "" : "s"} modified
@@ -515,7 +517,7 @@
                 No changes
             {/if}
         {:else if missingRequired.length > 0}
-            <span class="text-destructive">
+            <span class="error-status">
                 {missingRequired.length} required field{missingRequired.length === 1 ? "" : "s"} missing
             </span>
         {:else}
@@ -540,14 +542,14 @@
 
 {#if fullscreen}
     <!-- Full-screen panel mode -->
-    <div class="h-full max-h-screen flex flex-col bg-background overflow-hidden">
+    <div class="fullscreen-panel">
         <!-- Header with back button -->
-        <header class="flex items-center gap-4 px-6 md:px-8 py-4 border-b border-border shrink-0">
+        <header class="panel-header">
             <Button variant="ghost" size="icon" onclick={onClose}>
                 <ArrowLeft size={20} />
             </Button>
             <div>
-                <h1 class="text-lg font-medium text-foreground uppercase tracking-wide">
+                <h1 class="panel-title">
                     {row ? "Edit" : "New"}
                     {tableName}
                 </h1>
@@ -555,14 +557,14 @@
         </header>
 
         <!-- Scrollable form content -->
-        <div class="flex-1 min-h-0 overflow-y-auto p-6 md:p-8">
-            <div class="space-y-6">
+        <div class="panel-content">
+            <div class="form-fields">
                 {@render formFields()}
             </div>
 
             <!-- Related tables section (only when viewing existing row) -->
             {#if row && table && schema && client}
-                <div class="mt-8">
+                <div class="related-tables">
                     <RelatedTables
                         currentTable={table}
                         currentRow={row}
@@ -575,7 +577,7 @@
         </div>
 
         <!-- Footer with actions -->
-        <footer class="flex items-center gap-4 px-6 md:px-8 py-4 border-t border-border shrink-0">
+        <footer class="panel-footer">
             {@render footer()}
         </footer>
     </div>
@@ -587,7 +589,7 @@
                 <Dialog.Title>{row ? "Edit Row" : "Create Row"}</Dialog.Title>
             </Dialog.Header>
 
-            <div class="space-y-4">
+            <div class="form-fields">
                 {@render formFields()}
             </div>
 
@@ -597,3 +599,193 @@
         </Dialog.Content>
     </Dialog.Root>
 {/if}
+
+<style>
+    .field-group {
+        margin-bottom: 1rem;
+    }
+
+    .field-label-row {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        margin-bottom: 0.25rem;
+    }
+
+    :global(.field-icon) {
+        color: var(--muted-foreground);
+        opacity: 0.6;
+    }
+
+    :global(.required-indicator) {
+        color: var(--destructive);
+    }
+
+    .modified-indicator {
+        font-size: 0.625rem;
+        color: var(--chart-4);
+        font-weight: 500;
+    }
+
+    .revert-btn {
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        color: var(--muted-foreground);
+        opacity: 0.6;
+        transition:
+            color 0.15s,
+            opacity 0.15s;
+    }
+
+    .revert-btn:hover {
+        color: var(--foreground);
+        opacity: 1;
+    }
+
+    .info-trigger {
+        cursor: help;
+        color: var(--muted-foreground);
+        opacity: 0.4;
+        transition: opacity 0.15s;
+    }
+
+    .info-trigger:hover {
+        opacity: 1;
+    }
+
+    .tooltip-text {
+        font-size: 0.75rem;
+    }
+
+    .mono {
+        font-family: ui-monospace, monospace;
+    }
+
+    .error-text {
+        font-size: 0.75rem;
+        color: var(--destructive);
+        margin: 0.25rem 0;
+    }
+
+    .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        height: 2.25rem;
+    }
+
+    .checkbox-value {
+        font-size: 0.875rem;
+        color: var(--muted-foreground);
+    }
+
+    .fk-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .fk-select {
+        flex: 1;
+    }
+
+    .fk-indicator {
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    :global(.full-width) {
+        width: 100%;
+    }
+
+    .form-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .footer-left {
+        margin-right: auto;
+    }
+
+    .status-text {
+        flex: 1;
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+    }
+
+    .error-status {
+        color: var(--destructive);
+    }
+
+    /* Fullscreen panel styles */
+    .fullscreen-panel {
+        height: 100%;
+        max-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background-color: var(--background);
+        overflow: hidden;
+    }
+
+    .panel-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+
+    @media (min-width: 768px) {
+        .panel-header {
+            padding: 1rem 2rem;
+        }
+    }
+
+    .panel-title {
+        font-size: 1.125rem;
+        font-weight: 500;
+        color: var(--foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0;
+    }
+
+    .panel-content {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+        .panel-content {
+            padding: 2rem;
+        }
+    }
+
+    .related-tables {
+        margin-top: 2rem;
+    }
+
+    .panel-footer {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+
+    @media (min-width: 768px) {
+        .panel-footer {
+            padding: 1rem 2rem;
+        }
+    }
+</style>

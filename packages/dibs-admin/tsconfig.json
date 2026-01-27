@@ -15,13 +15,6 @@
     "declarationMap": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "baseUrl": ".",
-    "paths": {
-      "$lib": ["./src/lib"],
-      "$lib/*": ["./src/lib/*"],
-      "$da": ["./src/lib"],
-      "$da/*": ["./src/lib/*"],
-    },
   },
   "include": ["src/**/*"],
 }

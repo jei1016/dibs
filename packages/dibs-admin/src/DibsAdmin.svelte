@@ -23,8 +23,7 @@
     import RowDetail from "./components/RowDetail.svelte";
     import Breadcrumb from "./components/Breadcrumb.svelte";
     import Dashboard from "./components/Dashboard.svelte";
-    import { Button } from "./lib/components/ui/index.js";
-    import { Tooltip } from "./lib/components/ui/index.js";
+    import { Button, Tooltip } from "./lib/ui/index.js";
     import type { BreadcrumbEntry } from "./lib/fk-utils.js";
     import { createBreadcrumbLabel, getTableByName, getPkValue } from "./lib/fk-utils.js";
     import {
