@@ -175,6 +175,24 @@ export interface FieldRenderer {
 }
 
 // =============================================================================
+// Table Groups
+// =============================================================================
+
+export interface TableGroupConfig {
+  /** Group name displayed in sidebar */
+  name: string;
+
+  /** Optional icon for the group header */
+  icon?: string;
+
+  /** Tables in this group (by table name) */
+  tables: string[];
+
+  /** Whether the group starts collapsed */
+  collapsed?: boolean;
+}
+
+// =============================================================================
 // Table Defaults
 // =============================================================================
 
@@ -193,6 +211,9 @@ export interface TableDefaults {
 export interface DibsAdminConfig {
   /** Dashboard configuration (optional) */
   dashboard?: DashboardConfig;
+
+  /** Table groups for sidebar organization */
+  groups?: TableGroupConfig[];
 
   /** Per-table configurations */
   tables?: Record<string, TableConfig>;
