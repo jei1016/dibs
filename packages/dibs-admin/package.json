@@ -43,7 +43,7 @@
     "svelte": "^5.0.0"
   },
   "dependencies": {
-    "@bearcove/dibs-router": "workspace:*",
+    "@bearcove/sextant": "github:bearcove/sextant",
     "@bearcove/squel-service": "workspace:*",
     "@codemirror/commands": "^6.8.1",
     "@codemirror/lang-css": "^6.3.1",

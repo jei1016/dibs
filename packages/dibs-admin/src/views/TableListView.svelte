@@ -24,7 +24,7 @@
         DibsError,
     } from "@bearcove/dibs-admin/types";
 
-    import { useNavigate } from "@bearcove/dibs-router";
+    import { useNavigate } from "@bearcove/sextant";
     import { adminRoutes } from "../routes.js";
 
     // Props from router (path params + query params)

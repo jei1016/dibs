@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack, onMount } from "svelte";
-  import { Router, useNavigate } from "@bearcove/dibs-router";
+  import { Router, useNavigate } from "@bearcove/sextant";
   import type { SquelServiceCaller, SchemaInfo, Row } from "@bearcove/dibs-admin/types";
   import type { DibsAdminConfig } from "@bearcove/dibs-admin/types/config";
   import TableList from "./components/TableList.svelte";

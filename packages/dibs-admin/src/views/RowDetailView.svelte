@@ -1,7 +1,7 @@
 <script lang="ts">
     import RowDetail from "../components/RowDetail.svelte";
     import { getAdminContext } from "../lib/admin-context.js";
-    import { useNavigate } from "@bearcove/dibs-router";
+    import { useNavigate } from "@bearcove/sextant";
     import { adminRoutes } from "../routes.js";
     import type { Row, Value, DibsError } from "@bearcove/dibs-admin/types";
 

@@ -1,4 +1,4 @@
-import { defineRoutes } from "@bearcove/dibs-router";
+import { defineRoutes } from "@bearcove/sextant";
 import DashboardView from "./views/DashboardView.svelte";
 import TableListView from "./views/TableListView.svelte";
 import RowDetailView from "./views/RowDetailView.svelte";
