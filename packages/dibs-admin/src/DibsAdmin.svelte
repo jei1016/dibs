@@ -1,8 +1,7 @@
 <script lang="ts">
-    import { untrack } from "svelte";
+    import { untrack, onDestroy } from "svelte";
     import { RouterView } from "@dvcol/svelte-simple-router/components";
-    import { useNavigate, useRoute } from "@dvcol/svelte-simple-router/router";
-    import type { Route } from "@dvcol/svelte-simple-router/models";
+    import { useNavigate, useRoute, useRouter } from "@dvcol/svelte-simple-router/router";
     import type { SquelServiceCaller, SchemaInfo, Row } from "@bearcove/dibs-admin/types";
     import type { DibsAdminConfig } from "@bearcove/dibs-admin/types/config";
     import TableList from "./components/TableList.svelte";
@@ -25,17 +24,28 @@
 
     let { client, config }: Props = $props();
 
-    // Get navigation from parent router context
+    // Get router context
+    const router = useRouter();
     const navigate = useNavigate();
     const routeState = useRoute();
 
-    // Nested routes for admin views
-    const routes: Route[] = [
-        { name: "dashboard", path: "", component: DashboardView },
-        { name: "table-list", path: ":table", component: TableListView },
-        { name: "row-create", path: ":table/new", component: RowCreateView },
-        { name: "row-detail", path: ":table/:pk", component: RowDetailView },
+    // Discover our base path from the current matched route
+    const basePath = routeState.route?.path ?? "/admin";
+
+    // Register our child routes dynamically
+    const childRoutes = [
+        { name: "admin-table-list", path: `${basePath}/:table`, components: { default: DibsAdmin, "admin-content": TableListView } },
+        { name: "admin-row-create", path: `${basePath}/:table/new`, components: { default: DibsAdmin, "admin-content": RowCreateView } },
+        { name: "admin-row-detail", path: `${basePath}/:table/:pk`, components: { default: DibsAdmin, "admin-content": RowDetailView } },
     ];
+
+    // Add routes on mount
+    router.addRoutes(childRoutes);
+
+    // Remove routes on unmount
+    onDestroy(() => {
+        router.removeRoutes(childRoutes);
+    });
 
     // Schema state
     let schema = $state<SchemaInfo | null>(schemaCache.get(client) ?? null);
