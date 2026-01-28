@@ -2,6 +2,10 @@
 
 export { default as DibsAdmin } from "./DibsAdmin.svelte";
 
+// Export routes for consumers who want to mount dibs-admin
+export { adminRoutes } from "./routes.js";
+export type { AdminRoutes } from "./routes.js";
+
 // Re-export types that consumers might need
 export type {
   SquelClient,

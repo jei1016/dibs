@@ -7,7 +7,6 @@
     import Breadcrumb from "../components/Breadcrumb.svelte";
     import { Button } from "@bearcove/dibs-admin/lib/ui";
     import { getAdminContext } from "../lib/admin-context.js";
-    import { useRoute, useNavigate } from "@dvcol/svelte-simple-router/router";
     import {
         getTableLabel,
         getDisplayColumns,
@@ -25,12 +24,20 @@
         DibsError,
     } from "@bearcove/dibs-admin/types";
 
-    const ctx = getAdminContext();
-    const routeState = useRoute();
-    const navigate = useNavigate();
+    import { useNavigate } from "@bearcove/dibs-router";
+    import { adminRoutes } from "../routes.js";
 
-    // Get table name from route params
-    const tableName = $derived((routeState.route?.params as { table?: string })?.table ?? "");
+    // Props from router (path params + query params)
+    interface Props {
+        table: string;
+        page?: number;
+        sort?: string;
+        sortDir?: string;
+    }
+    let { table: tableName, page = 1, sort: sortParam, sortDir }: Props = $props();
+
+    const ctx = getAdminContext();
+    const navigate = useNavigate();
 
     // Data state
     let rows = $state<Row[]>([]);
@@ -255,11 +262,11 @@
         const field = row.fields.find((f) => f.name === pkCol.name);
         if (!field) return;
         const pkStr = formatPkValue(field.value);
-        navigate.push({ path: `${tableName}/${pkStr}` });
+        navigate(adminRoutes.rowDetail, { table: tableName, pk: pkStr });
     }
 
     function openCreateDialog() {
-        navigate.push({ path: `${tableName}/new` });
+        navigate(adminRoutes.rowCreate, { table: tableName });
     }
 
     function navigateToFk(targetTable: string, pkValue: Value) {
@@ -269,7 +276,7 @@
             label: `${targetTable} #${pkStr}`,
             pkValue,
         });
-        navigate.push({ path: `${targetTable}/${pkStr}` });
+        navigate(adminRoutes.rowDetail, { table: targetTable, pk: pkStr });
     }
 
     function navigateToBreadcrumb(index: number) {
@@ -285,9 +292,9 @@
 
         if (entry.pkValue) {
             const pkStr = formatPkValue(entry.pkValue);
-            navigate.push({ path: `${entry.table}/${pkStr}` });
+            navigate(adminRoutes.rowDetail, { table: entry.table, pk: pkStr });
         } else {
-            navigate.push({ path: entry.table });
+            navigate(adminRoutes.tableList, { table: entry.table });
         }
     }
 </script>

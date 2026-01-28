@@ -1,15 +1,18 @@
 <script lang="ts">
     import RowEditor from "../components/RowEditor.svelte";
     import { getAdminContext } from "../lib/admin-context.js";
-    import { useRoute, useNavigate } from "@dvcol/svelte-simple-router/router";
+    import { useNavigate } from "@bearcove/dibs-router";
+    import { adminRoutes } from "../routes.js";
     import type { Row, DibsError } from "@bearcove/dibs-admin/types";
 
-    const ctx = getAdminContext();
-    const routeState = useRoute();
-    const navigate = useNavigate();
+    // Props from router (path params)
+    interface Props {
+        table: string;
+    }
+    let { table: tableName }: Props = $props();
 
-    // Get table name from route params
-    const tableName = $derived((routeState.route?.params as { table?: string })?.table ?? "");
+    const ctx = getAdminContext();
+    const navigate = useNavigate();
 
     let saving = $state(false);
     let error = $state<string | null>(null);
@@ -38,7 +41,7 @@
                 error = formatError(result.error);
                 return;
             }
-            navigate.push({ path: tableName });
+            navigate(adminRoutes.tableList, { table: tableName });
         } catch (e) {
             error = e instanceof Error ? e.message : String(e);
         } finally {
@@ -47,7 +50,7 @@
     }
 
     function closeEditor() {
-        navigate.push({ path: tableName });
+        navigate(adminRoutes.tableList, { table: tableName });
     }
 </script>
 

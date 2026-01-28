@@ -1,16 +1,19 @@
 <script lang="ts">
     import RowDetail from "../components/RowDetail.svelte";
     import { getAdminContext } from "../lib/admin-context.js";
-    import { useRoute, useNavigate } from "@dvcol/svelte-simple-router/router";
+    import { useNavigate } from "@bearcove/dibs-router";
+    import { adminRoutes } from "../routes.js";
     import type { Row, Value, DibsError } from "@bearcove/dibs-admin/types";
 
-    const ctx = getAdminContext();
-    const routeState = useRoute();
-    const navigate = useNavigate();
+    // Props from router (path params)
+    interface Props {
+        table: string;
+        pk: string;
+    }
+    let { table: tableName, pk }: Props = $props();
 
-    // Get table and pk from route params
-    const tableName = $derived((routeState.route?.params as { table?: string })?.table ?? "");
-    const pk = $derived((routeState.route?.params as { pk?: string })?.pk ?? "");
+    const ctx = getAdminContext();
+    const navigate = useNavigate();
 
     let row = $state<Row | null>(null);
     let loading = $state(true);
@@ -47,12 +50,12 @@
                 row = result.value;
             } else {
                 row = null;
-                navigate.push({ path: tableName });
+                navigate(adminRoutes.tableList, { table: tableName });
             }
         } catch (e) {
             console.error("Failed to load row:", e);
             row = null;
-            navigate.push({ path: tableName });
+            navigate(adminRoutes.tableList, { table: tableName });
         } finally {
             loading = false;
         }
@@ -143,7 +146,7 @@
                 error = formatError(result.error);
                 return;
             }
-            navigate.push({ path: tableName });
+            navigate(adminRoutes.tableList, { table: tableName });
         } catch (e) {
             error = e instanceof Error ? e.message : String(e);
         } finally {
@@ -152,7 +155,7 @@
     }
 
     function closeEditor() {
-        navigate.push({ path: tableName });
+        navigate(adminRoutes.tableList, { table: tableName });
     }
 
     function handleRelatedNavigate(relatedTable: string, pkValue: Value) {
@@ -162,7 +165,7 @@
             label: `${relatedTable} #${pkStr}`,
             pkValue,
         });
-        navigate.push({ path: `${relatedTable}/${pkStr}` });
+        navigate(adminRoutes.rowDetail, { table: relatedTable, pk: pkStr });
     }
 </script>
 
