@@ -17,9 +17,9 @@ importers:
 
   packages/dibs-admin:
     dependencies:
-      '@bearcove/dibs-router':
-        specifier: workspace:*
-        version: link:../dibs-router
+      '@bearcove/sextant':
+        specifier: github:bearcove/sextant
+        version: https://codeload.github.com/bearcove/sextant/tar.gz/53d958f0c2ec32cdb7eb9ad7e617d112c733900d(svelte@5.48.3)
       '@bearcove/squel-service':
         specifier: workspace:*
         version: link:../squel-service
@@ -148,6 +148,12 @@ packages:
   '@bearcove/roam-ws@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-ws':
     resolution: {path: typescript/packages/roam-ws, tarball: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991}
     version: 0.1.0
+
+  '@bearcove/sextant@https://codeload.github.com/bearcove/sextant/tar.gz/53d958f0c2ec32cdb7eb9ad7e617d112c733900d':
+    resolution: {tarball: https://codeload.github.com/bearcove/sextant/tar.gz/53d958f0c2ec32cdb7eb9ad7e617d112c733900d}
+    version: 0.1.0
+    peerDependencies:
+      svelte: ^5.0.0
 
   '@codemirror/autocomplete@6.20.0':
     resolution: {integrity: sha512-bOwvTOIJcG5FVo5gUUupiwYh8MioPLQ4UcqbcRf7UQ98X90tCa9E1kZ3Z7tqwpZxYyOvh1YTYbmZE9RTfTp5hg==}
@@ -885,6 +891,10 @@ snapshots:
     dependencies:
       '@bearcove/roam-core': https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-core
       '@bearcove/roam-tcp': https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-tcp
+
+  '@bearcove/sextant@https://codeload.github.com/bearcove/sextant/tar.gz/53d958f0c2ec32cdb7eb9ad7e617d112c733900d(svelte@5.48.3)':
+    dependencies:
+      svelte: 5.48.3
 
   '@codemirror/autocomplete@6.20.0':
     dependencies:
