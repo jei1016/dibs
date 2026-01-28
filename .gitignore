@@ -18,3 +18,4 @@ examples/.env
 .handoffs
 .tracey/
 .playwright-mcp/
+pnpm-lock.yaml
