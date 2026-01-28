@@ -43,22 +43,24 @@ pub fn parse_query_file(source: &str) -> Result<QueryFile, ParseError> {
     let mut updates = Vec::new();
     let mut deletes = Vec::new();
 
-    for (name, decl) in schema_file.decls {
+    for (documented_name, decl) in schema_file.0 {
+        let name = &documented_name.value;
+        let doc_comment = documented_name.doc.map(|lines| lines.join("\n"));
         match decl {
             schema::Decl::Query(q) => {
-                queries.push(convert_query(&name, &q)?);
+                queries.push(convert_query(name, &q, doc_comment)?);
             }
             schema::Decl::Insert(i) => {
-                inserts.push(convert_insert(&name, &i));
+                inserts.push(convert_insert(name, &i, doc_comment));
             }
             schema::Decl::Upsert(u) => {
-                upserts.push(convert_upsert(&name, &u));
+                upserts.push(convert_upsert(name, &u, doc_comment));
             }
             schema::Decl::Update(u) => {
-                updates.push(convert_update(&name, &u));
+                updates.push(convert_update(name, &u, doc_comment));
             }
             schema::Decl::Delete(d) => {
-                deletes.push(convert_delete(&name, &d));
+                deletes.push(convert_delete(name, &d, doc_comment));
             }
         }
     }
@@ -73,7 +75,11 @@ pub fn parse_query_file(source: &str) -> Result<QueryFile, ParseError> {
 }
 
 /// Convert schema Query to AST Query.
-fn convert_query(name: &str, q: &schema::Query) -> Result<Query, ParseError> {
+fn convert_query(
+    name: &str,
+    q: &schema::Query,
+    doc_comment: Option<String>,
+) -> Result<Query, ParseError> {
     // Check for raw SQL mode
     if let Some(sql) = &q.sql {
         let returns = if let Some(returns) = &q.returns {
@@ -92,6 +98,7 @@ fn convert_query(name: &str, q: &schema::Query) -> Result<Query, ParseError> {
 
         return Ok(Query {
             name: name.to_string(),
+            doc_comment,
             span: None,
             params: convert_params(&q.params),
             from: String::new(),
@@ -119,6 +126,7 @@ fn convert_query(name: &str, q: &schema::Query) -> Result<Query, ParseError> {
 
     Ok(Query {
         name: name.to_string(),
+        doc_comment,
         span: None,
         params: convert_params(&q.params),
         from,
@@ -353,9 +361,10 @@ fn convert_select(select: &schema::Select) -> Vec<Field> {
 }
 
 /// Convert schema Insert to AST InsertMutation.
-fn convert_insert(name: &str, i: &schema::Insert) -> InsertMutation {
+fn convert_insert(name: &str, i: &schema::Insert, doc_comment: Option<String>) -> InsertMutation {
     InsertMutation {
         name: name.to_string(),
+        doc_comment,
         span: None,
         params: convert_params(&i.params),
         table: i.into.clone(),
@@ -365,7 +374,7 @@ fn convert_insert(name: &str, i: &schema::Insert) -> InsertMutation {
 }
 
 /// Convert schema Upsert to AST UpsertMutation.
-fn convert_upsert(name: &str, u: &schema::Upsert) -> UpsertMutation {
+fn convert_upsert(name: &str, u: &schema::Upsert, doc_comment: Option<String>) -> UpsertMutation {
     // Merge values with update columns that have explicit values
     let mut values = convert_values(&u.values);
 
@@ -408,6 +417,7 @@ fn convert_upsert(name: &str, u: &schema::Upsert) -> UpsertMutation {
 
     UpsertMutation {
         name: name.to_string(),
+        doc_comment,
         span: None,
         params: convert_params(&u.params),
         table: u.into.clone(),
@@ -418,9 +428,10 @@ fn convert_upsert(name: &str, u: &schema::Upsert) -> UpsertMutation {
 }
 
 /// Convert schema Update to AST UpdateMutation.
-fn convert_update(name: &str, u: &schema::Update) -> UpdateMutation {
+fn convert_update(name: &str, u: &schema::Update, doc_comment: Option<String>) -> UpdateMutation {
     UpdateMutation {
         name: name.to_string(),
+        doc_comment,
         span: None,
         params: convert_params(&u.params),
         table: u.table.clone(),
@@ -431,9 +442,10 @@ fn convert_update(name: &str, u: &schema::Update) -> UpdateMutation {
 }
 
 /// Convert schema Delete to AST DeleteMutation.
-fn convert_delete(name: &str, d: &schema::Delete) -> DeleteMutation {
+fn convert_delete(name: &str, d: &schema::Delete, doc_comment: Option<String>) -> DeleteMutation {
     DeleteMutation {
         name: name.to_string(),
+        doc_comment,
         span: None,
         params: convert_params(&d.params),
         table: d.from.clone(),
@@ -748,5 +760,62 @@ DeleteUser @delete{
         assert_eq!(d.table, "users");
         assert_eq!(d.filters.len(), 1);
         assert_eq!(d.returning.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_doc_comments() {
+        let source = r#"
+/// Get all products from the database.
+/// Returns a list of products with their IDs and handles.
+AllProducts @query{
+  from product
+  select{ id, handle }
+}
+
+/// Create a new user in the system.
+CreateUser @insert{
+  params{ name @string }
+  into users
+  values{ name }
+  returning{ id }
+}
+
+/// Upsert exchange rate (insert or update if exists).
+UpsertRate @upsert{
+  params{ currency @string, rate @decimal }
+  into exchange_rates
+  on-conflict{
+    target{ currency }
+    update{ rate }
+  }
+  values{ currency, rate }
+  returning{ id }
+}
+"#;
+        let file = parse_query_file(source).unwrap();
+
+        // Check query doc comment
+        assert_eq!(file.queries.len(), 1);
+        let q = &file.queries[0];
+        assert_eq!(
+            q.doc_comment,
+            Some("Get all products from the database.\nReturns a list of products with their IDs and handles.".to_string())
+        );
+
+        // Check insert doc comment
+        assert_eq!(file.inserts.len(), 1);
+        let i = &file.inserts[0];
+        assert_eq!(
+            i.doc_comment,
+            Some("Create a new user in the system.".to_string())
+        );
+
+        // Check upsert doc comment
+        assert_eq!(file.upserts.len(), 1);
+        let u = &file.upserts[0];
+        assert_eq!(
+            u.doc_comment,
+            Some("Upsert exchange rate (insert or update if exists).".to_string())
+        );
     }
 }

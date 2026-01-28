@@ -289,6 +289,9 @@ fn generate_query_function(
     };
 
     let mut func = Function::new(&fn_name);
+    if let Some(doc) = &query.doc_comment {
+        func.doc(doc);
+    }
     func.vis("pub");
     func.set_async(true);
     func.generic("C");
@@ -1423,6 +1426,9 @@ fn generate_insert_code(_ctx: &CodegenContext, insert: &InsertMutation, scope: &
     };
 
     let mut func = Function::new(&fn_name);
+    if let Some(doc) = &insert.doc_comment {
+        func.doc(doc);
+    }
     func.vis("pub");
     func.set_async(true);
     func.generic("C");
@@ -1461,6 +1467,9 @@ fn generate_upsert_code(_ctx: &CodegenContext, upsert: &UpsertMutation, scope: &
     };
 
     let mut func = Function::new(&fn_name);
+    if let Some(doc) = &upsert.doc_comment {
+        func.doc(doc);
+    }
     func.vis("pub");
     func.set_async(true);
     func.generic("C");
@@ -1499,6 +1508,9 @@ fn generate_update_code(_ctx: &CodegenContext, update: &UpdateMutation, scope: &
     };
 
     let mut func = Function::new(&fn_name);
+    if let Some(doc) = &update.doc_comment {
+        func.doc(doc);
+    }
     func.vis("pub");
     func.set_async(true);
     func.generic("C");
@@ -1537,6 +1549,9 @@ fn generate_delete_code(_ctx: &CodegenContext, delete: &DeleteMutation, scope: &
     };
 
     let mut func = Function::new(&fn_name);
+    if let Some(doc) = &delete.doc_comment {
+        func.doc(doc);
+    }
     func.vis("pub");
     func.set_async(true);
     func.generic("C");

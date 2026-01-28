@@ -828,6 +828,7 @@ mod tests {
 
         let query = Query {
             name: "GetProduct".to_string(),
+            doc_comment: None,
             span: None,
             params: vec![],
             from: "product".to_string(),
@@ -866,6 +867,7 @@ mod tests {
 
         let query = Query {
             name: "GetProductWithTranslations".to_string(),
+            doc_comment: None,
             span: None,
             params: vec![],
             from: "product".to_string(),
@@ -951,6 +953,7 @@ mod tests {
 
         let query = Query {
             name: "GetProductWithVariantsAndPrices".to_string(),
+            doc_comment: None,
             span: None,
             params: vec![],
             from: "product".to_string(),

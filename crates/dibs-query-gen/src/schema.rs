@@ -28,10 +28,10 @@ AllProducts @query{
             }
         };
         debug!("Parsed file: {:?}", file);
-        assert_eq!(file.decls.len(), 1);
+        assert_eq!(file.0.len(), 1);
 
-        let (name, decl) = file.decls.iter().next().unwrap();
-        assert_eq!(name, "AllProducts");
+        let (documented_name, decl) = file.0.iter().next().unwrap();
+        assert_eq!(documented_name.value, "AllProducts");
 
         match decl {
             Decl::Query(q) => {
@@ -52,6 +52,15 @@ AllProducts @query{
         }
     }
 
+    /// Helper to get a declaration by name from the file.
+    fn get_decl<'a>(file: &'a QueryFile, name: &str) -> &'a Decl {
+        file.0
+            .iter()
+            .find(|(k, _)| k.value == name)
+            .map(|(_, v)| v)
+            .unwrap_or_else(|| panic!("Decl '{}' not found", name))
+    }
+
     #[test]
     fn test_parse_query_with_params() {
         let source = r#"
@@ -65,7 +74,7 @@ ProductByHandle @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("ProductByHandle").unwrap() else {
+        let Decl::Query(q) = get_decl(&file, "ProductByHandle") else {
             panic!("expected Query");
         };
 
@@ -91,7 +100,7 @@ SearchProducts @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("SearchProducts").unwrap() else {
+        let Decl::Query(q) = get_decl(&file, "SearchProducts") else {
             panic!("expected Query");
         };
 
@@ -123,7 +132,7 @@ ProductByHandle @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("ProductByHandle").unwrap() else {
+        let Decl::Query(q) = get_decl(&file, "ProductByHandle") else {
             panic!("expected Query");
         };
 
@@ -147,7 +156,7 @@ ActiveProducts @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("ActiveProducts").unwrap() else {
+        let Decl::Query(q) = get_decl(&file, "ActiveProducts") else {
             panic!("expected Query");
         };
 
@@ -170,7 +179,7 @@ SearchProducts @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("SearchProducts").unwrap() else {
+        let Decl::Query(q) = get_decl(&file, "SearchProducts") else {
             panic!("expected Query");
         };
 
@@ -195,7 +204,7 @@ SingleProduct @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("SingleProduct").unwrap() else {
+        let Decl::Query(q) = get_decl(&file, "SingleProduct") else {
             panic!("expected Query");
         };
 
@@ -212,7 +221,7 @@ ProductsSorted @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("ProductsSorted").unwrap() else {
+        let Decl::Query(q) = get_decl(&file, "ProductsSorted") else {
             panic!("expected Query");
         };
 
@@ -237,7 +246,7 @@ PagedProducts @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("PagedProducts").unwrap() else {
+        let Decl::Query(q) = get_decl(&file, "PagedProducts") else {
             panic!("expected Query");
         };
 
@@ -262,7 +271,7 @@ ProductWithTranslation @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("ProductWithTranslation").unwrap() else {
+        let Decl::Query(q) = get_decl(&file, "ProductWithTranslation") else {
             panic!("expected Query");
         };
 
@@ -296,7 +305,7 @@ ProductWithVariantCount @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("ProductWithVariantCount").unwrap() else {
+        let Decl::Query(q) = get_decl(&file, "ProductWithVariantCount") else {
             panic!("expected Query");
         };
 
@@ -338,7 +347,7 @@ TrendingProducts @query{
 }
 "#;
         let file: QueryFile = parse(source);
-        let Decl::Query(q) = file.decls.get("TrendingProducts").unwrap() else {
+        let Decl::Query(q) = get_decl(&file, "TrendingProducts") else {
             panic!("expected Query");
         };
 

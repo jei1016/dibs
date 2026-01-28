@@ -19,6 +19,8 @@ pub struct QueryFile {
 pub struct Query {
     /// Query name (e.g., "ProductListing").
     pub name: String,
+    /// Doc comment from the styx file (/// comments).
+    pub doc_comment: Option<String>,
     /// Source span.
     pub span: Option<Span>,
     /// Query parameters.
@@ -200,6 +202,8 @@ impl Query {
 pub struct InsertMutation {
     /// Mutation name.
     pub name: String,
+    /// Doc comment from the styx file (/// comments).
+    pub doc_comment: Option<String>,
     /// Source span.
     pub span: Option<Span>,
     /// Parameters.
@@ -217,6 +221,8 @@ pub struct InsertMutation {
 pub struct UpsertMutation {
     /// Mutation name.
     pub name: String,
+    /// Doc comment from the styx file (/// comments).
+    pub doc_comment: Option<String>,
     /// Source span.
     pub span: Option<Span>,
     /// Parameters.
@@ -236,6 +242,8 @@ pub struct UpsertMutation {
 pub struct UpdateMutation {
     /// Mutation name.
     pub name: String,
+    /// Doc comment from the styx file (/// comments).
+    pub doc_comment: Option<String>,
     /// Source span.
     pub span: Option<Span>,
     /// Parameters.
@@ -255,6 +263,8 @@ pub struct UpdateMutation {
 pub struct DeleteMutation {
     /// Mutation name.
     pub name: String,
+    /// Doc comment from the styx file (/// comments).
+    pub doc_comment: Option<String>,
     /// Source span.
     pub span: Option<Span>,
     /// Parameters.
