@@ -20,10 +20,10 @@ importers:
     dependencies:
       '@bearcove/sextant':
         specifier: ^0.1.0
-        version: 0.1.0(svelte@5.48.3)
+        version: 0.1.0(svelte@5.48.5)
       '@bearcove/squel-service':
         specifier: workspace:*
-        version: file:packages/squel-service
+        version: link:../squel-service
       '@codemirror/commands':
         specifier: ^6.8.1
         version: 6.10.1
@@ -59,29 +59,29 @@ importers:
         version: 6.3.0(@codemirror/commands@6.10.1)(@codemirror/language@6.12.1)(@codemirror/search@6.6.0)(@codemirror/state@6.5.4)(@codemirror/view@6.39.11)
       bits-ui:
         specifier: ^2.15.4
-        version: 2.15.4(@internationalized/date@3.10.1)(svelte@5.48.3)
+        version: 2.15.4(@internationalized/date@3.10.1)(svelte@5.48.5)
       codemirror:
         specifier: ^6.0.2
         version: 6.0.2
       phosphor-svelte:
         specifier: ^3.0.0
-        version: 3.1.0(svelte@5.48.3)(vite@6.4.1)
+        version: 3.1.0(svelte@5.48.5)(vite@6.4.1)
     devDependencies:
       '@internationalized/date':
         specifier: ^3.10.1
         version: 3.10.1
       '@sveltejs/package':
         specifier: ^2.3.0
-        version: 2.5.7(svelte@5.48.3)(typescript@5.9.3)
+        version: 2.5.7(svelte@5.48.5)(typescript@5.9.3)
       '@sveltejs/vite-plugin-svelte':
         specifier: ^5.0.0
-        version: 5.1.1(svelte@5.48.3)(vite@6.4.1)
+        version: 5.1.1(svelte@5.48.5)(vite@6.4.1)
       svelte:
         specifier: ^5.16.2
-        version: 5.48.3
+        version: 5.48.5
       svelte-check:
         specifier: ^4.0.0
-        version: 4.3.5(picomatch@4.0.3)(svelte@5.48.3)(typescript@5.9.3)
+        version: 4.3.5(picomatch@4.0.3)(svelte@5.48.5)(typescript@5.9.3)
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
@@ -90,16 +90,16 @@ importers:
     devDependencies:
       '@sveltejs/package':
         specifier: ^2.3.0
-        version: 2.5.7(svelte@5.48.3)(typescript@5.9.3)
+        version: 2.5.7(svelte@5.48.5)(typescript@5.9.3)
       '@sveltejs/vite-plugin-svelte':
         specifier: ^5.0.0
-        version: 5.1.1(svelte@5.48.3)(vite@6.4.1)
+        version: 5.1.1(svelte@5.48.5)(vite@6.4.1)
       svelte:
         specifier: ^5.16.2
-        version: 5.48.3
+        version: 5.48.5
       svelte-check:
         specifier: ^4.0.0
-        version: 4.3.5(picomatch@4.0.3)(svelte@5.48.3)(typescript@5.9.3)
+        version: 4.3.5(picomatch@4.0.3)(svelte@5.48.5)(typescript@5.9.3)
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
@@ -108,13 +108,13 @@ importers:
     dependencies:
       '@bearcove/roam-core':
         specifier: github:bearcove/roam#path:typescript/packages/roam-core
-        version: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-core
+        version: https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-core
       '@bearcove/roam-postcard':
         specifier: github:bearcove/roam#path:typescript/packages/roam-postcard
-        version: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-postcard
+        version: https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-postcard
       '@bearcove/roam-ws':
         specifier: github:bearcove/roam#path:typescript/packages/roam-ws
-        version: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-ws
+        version: https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-ws
     devDependencies:
       typescript:
         specifier: ^5.0.0
@@ -122,45 +122,30 @@ importers:
 
 packages:
 
-  '@bearcove/roam-core@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-core':
-    resolution: {path: typescript/packages/roam-core, tarball: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991}
+  '@bearcove/roam-core@https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-core':
+    resolution: {path: typescript/packages/roam-core, tarball: https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9}
     version: 0.1.0
 
-  '@bearcove/roam-core@https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-core':
-    resolution: {path: typescript/packages/roam-core, tarball: https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8}
+  '@bearcove/roam-postcard@https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-postcard':
+    resolution: {path: typescript/packages/roam-postcard, tarball: https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9}
     version: 0.1.0
 
-  '@bearcove/roam-postcard@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-postcard':
-    resolution: {path: typescript/packages/roam-postcard, tarball: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991}
+  '@bearcove/roam-tcp@https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-tcp':
+    resolution: {path: typescript/packages/roam-tcp, tarball: https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9}
     version: 0.1.0
 
-  '@bearcove/roam-postcard@https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-postcard':
-    resolution: {path: typescript/packages/roam-postcard, tarball: https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8}
+  '@bearcove/roam-wire@https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-wire':
+    resolution: {path: typescript/packages/roam-wire, tarball: https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9}
     version: 0.1.0
 
-  '@bearcove/roam-tcp@https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-tcp':
-    resolution: {path: typescript/packages/roam-tcp, tarball: https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8}
-    version: 0.1.0
-
-  '@bearcove/roam-wire@https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-wire':
-    resolution: {path: typescript/packages/roam-wire, tarball: https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8}
-    version: 0.1.0
-
-  '@bearcove/roam-ws@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-ws':
-    resolution: {path: typescript/packages/roam-ws, tarball: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991}
-    version: 0.1.0
-
-  '@bearcove/roam-ws@https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-ws':
-    resolution: {path: typescript/packages/roam-ws, tarball: https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8}
+  '@bearcove/roam-ws@https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-ws':
+    resolution: {path: typescript/packages/roam-ws, tarball: https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9}
     version: 0.1.0
 
   '@bearcove/sextant@0.1.0':
     resolution: {integrity: sha512-+TxHY+7z2GmIInBpqaslqLdyptRNElSnLGcUZmX/SY8XT6UALSXlZKhZUB4Ub1gua3jjd4lqYFjxH7sr7IZxaA==}
     peerDependencies:
       svelte: ^5.0.0
-
-  '@bearcove/squel-service@file:packages/squel-service':
-    resolution: {directory: packages/squel-service, type: directory}
 
   '@codemirror/autocomplete@6.20.0':
     resolution: {integrity: sha512-bOwvTOIJcG5FVo5gUUupiwYh8MioPLQ4UcqbcRf7UQ98X90tCa9E1kZ3Z7tqwpZxYyOvh1YTYbmZE9RTfTp5hg==}
@@ -186,8 +171,8 @@ packages:
   '@codemirror/language@6.12.1':
     resolution: {integrity: sha512-Fa6xkSiuGKc8XC8Cn96T+TQHYj4ZZ7RdFmXA3i9xe/3hLHfwPZdM+dqfX0Cp0zQklBKhVD8Yzc8LS45rkqcwpQ==}
 
-  '@codemirror/lint@6.9.2':
-    resolution: {integrity: sha512-sv3DylBiIyi+xKwRCJAAsBZZZWo82shJ/RTMymLabAdtbkV5cSKwWDeCgtUq3v8flTaXS2y1kKkICuRYtUswyQ==}
+  '@codemirror/lint@6.9.3':
+    resolution: {integrity: sha512-y3YkYhdnhjDBAe0VIA0c4wVoFOvnp8CnAvfLqi0TqotIv92wIlAAP7HELOpLBsKwjAX6W92rSflA6an/2zBvXw==}
 
   '@codemirror/search@6.6.0':
     resolution: {integrity: sha512-koFuNXcDvyyotWcgOnZGmY7LZqEOXZaaxD/j6n18TCLx2/9HieZJ5H6hs1g8FiRxBD0DNfs0nXn17g872RmYdw==}
@@ -357,11 +342,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@floating-ui/core@1.7.3':
-    resolution: {integrity: sha512-sGnvb5dmrJaKEZ+LDIpguvdX3bDlEllmv4/ClQ9awcmCZrlx5jQyyMWFM5kBI+EyNOCDDiKk8il0zeuX3Zlg/w==}
+  '@floating-ui/core@1.7.4':
+    resolution: {integrity: sha512-C3HlIdsBxszvm5McXlB8PeOEWfBhcGBTZGkGlWc2U0KFY5IwG5OQEuQ8rq52DZmcHDlPLd+YFBK+cZcytwIFWg==}
 
-  '@floating-ui/dom@1.7.4':
-    resolution: {integrity: sha512-OOchDgh4F2CchOX94cRVqhvy7b3AFb+/rQXyswmzmGakRfkMgoWVjfnLWkRirfLEfuD4ysVW16eXzwt3jHIzKA==}
+  '@floating-ui/dom@1.7.5':
+    resolution: {integrity: sha512-N0bD2kIPInNHUHehXhMke1rBGs1dwqvC9O9KYMyyjK7iXt7GAhnro7UlcuYcGdS/yYOlq0MAVgrow8IbWJwyqg==}
 
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
@@ -784,8 +769,8 @@ packages:
       svelte: ^3.55 || ^4.0.0-next.0 || ^4.0 || ^5.0.0-next.0
       typescript: ^4.9.4 || ^5.0.0
 
-  svelte@5.48.3:
-    resolution: {integrity: sha512-w7QZ398cdNherTdiQ/v3SYLLGOO4948Jgjh04PYqtTYVohmBvbmFwLmo7pp8gp4/1tceRWfSTjHgjtfpCVNJmQ==}
+  svelte@5.48.5:
+    resolution: {integrity: sha512-NB3o70OxfmnE5UPyLr8uH3IV02Q43qJVAuWigYmsSOYsS0s/rHxP0TF81blG0onF/xkhNvZw4G8NfzIX+By5ZQ==}
     engines: {node: '>=18'}
 
   tabbable@6.4.0:
@@ -859,47 +844,29 @@ packages:
 
 snapshots:
 
-  '@bearcove/roam-core@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-core':
+  '@bearcove/roam-core@https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-core':
     dependencies:
-      '@bearcove/roam-postcard': https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-postcard
-      '@bearcove/roam-wire': https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-wire
+      '@bearcove/roam-postcard': https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-postcard
+      '@bearcove/roam-wire': https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-wire
 
-  '@bearcove/roam-core@https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-core':
+  '@bearcove/roam-postcard@https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-postcard': {}
+
+  '@bearcove/roam-tcp@https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-tcp':
     dependencies:
-      '@bearcove/roam-postcard': https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-postcard
-      '@bearcove/roam-wire': https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-wire
+      '@bearcove/roam-core': https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-core
 
-  '@bearcove/roam-postcard@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-postcard': {}
-
-  '@bearcove/roam-postcard@https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-postcard': {}
-
-  '@bearcove/roam-tcp@https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-tcp':
+  '@bearcove/roam-wire@https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-wire':
     dependencies:
-      '@bearcove/roam-core': https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-core
+      '@bearcove/roam-postcard': https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-postcard
 
-  '@bearcove/roam-wire@https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-wire':
+  '@bearcove/roam-ws@https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-ws':
     dependencies:
-      '@bearcove/roam-postcard': https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-postcard
+      '@bearcove/roam-core': https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-core
+      '@bearcove/roam-tcp': https://codeload.github.com/bearcove/roam/tar.gz/b024826015a94a4119f8c854158321a074fc7fa9#path:typescript/packages/roam-tcp
 
-  '@bearcove/roam-ws@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-ws':
+  '@bearcove/sextant@0.1.0(svelte@5.48.5)':
     dependencies:
-      '@bearcove/roam-core': https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-core
-      '@bearcove/roam-tcp': https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-tcp
-
-  '@bearcove/roam-ws@https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-ws':
-    dependencies:
-      '@bearcove/roam-core': https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-core
-      '@bearcove/roam-tcp': https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-tcp
-
-  '@bearcove/sextant@0.1.0(svelte@5.48.3)':
-    dependencies:
-      svelte: 5.48.3
-
-  '@bearcove/squel-service@file:packages/squel-service':
-    dependencies:
-      '@bearcove/roam-core': https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-core
-      '@bearcove/roam-postcard': https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-postcard
-      '@bearcove/roam-ws': https://codeload.github.com/bearcove/roam/tar.gz/f87a192b8f51de2cae227c256774a1cefd1079d8#path:typescript/packages/roam-ws
+      svelte: 5.48.5
 
   '@codemirror/autocomplete@6.20.0':
     dependencies:
@@ -939,7 +906,7 @@ snapshots:
     dependencies:
       '@codemirror/autocomplete': 6.20.0
       '@codemirror/language': 6.12.1
-      '@codemirror/lint': 6.9.2
+      '@codemirror/lint': 6.9.3
       '@codemirror/state': 6.5.4
       '@codemirror/view': 6.39.11
       '@lezer/common': 1.5.0
@@ -969,7 +936,7 @@ snapshots:
       '@lezer/lr': 1.4.8
       style-mod: 4.1.3
 
-  '@codemirror/lint@6.9.2':
+  '@codemirror/lint@6.9.3':
     dependencies:
       '@codemirror/state': 6.5.4
       '@codemirror/view': 6.39.11
@@ -1077,13 +1044,13 @@ snapshots:
   '@esbuild/win32-x64@0.25.12':
     optional: true
 
-  '@floating-ui/core@1.7.3':
+  '@floating-ui/core@1.7.4':
     dependencies:
       '@floating-ui/utils': 0.2.10
 
-  '@floating-ui/dom@1.7.4':
+  '@floating-ui/dom@1.7.5':
     dependencies:
-      '@floating-ui/core': 1.7.3
+      '@floating-ui/core': 1.7.4
       '@floating-ui/utils': 0.2.10
 
   '@floating-ui/utils@0.2.10': {}
@@ -1239,34 +1206,34 @@ snapshots:
     dependencies:
       acorn: 8.15.0
 
-  '@sveltejs/package@2.5.7(svelte@5.48.3)(typescript@5.9.3)':
+  '@sveltejs/package@2.5.7(svelte@5.48.5)(typescript@5.9.3)':
     dependencies:
       chokidar: 5.0.0
       kleur: 4.1.5
       sade: 1.8.1
       semver: 7.7.3
-      svelte: 5.48.3
-      svelte2tsx: 0.7.46(svelte@5.48.3)(typescript@5.9.3)
+      svelte: 5.48.5
+      svelte2tsx: 0.7.46(svelte@5.48.5)(typescript@5.9.3)
     transitivePeerDependencies:
       - typescript
 
-  '@sveltejs/vite-plugin-svelte-inspector@4.0.1(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.48.3)(vite@6.4.1))(svelte@5.48.3)(vite@6.4.1)':
+  '@sveltejs/vite-plugin-svelte-inspector@4.0.1(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.48.5)(vite@6.4.1))(svelte@5.48.5)(vite@6.4.1)':
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 5.1.1(svelte@5.48.3)(vite@6.4.1)
+      '@sveltejs/vite-plugin-svelte': 5.1.1(svelte@5.48.5)(vite@6.4.1)
       debug: 4.4.3
-      svelte: 5.48.3
+      svelte: 5.48.5
       vite: 6.4.1
     transitivePeerDependencies:
       - supports-color
 
-  '@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.48.3)(vite@6.4.1)':
+  '@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.48.5)(vite@6.4.1)':
     dependencies:
-      '@sveltejs/vite-plugin-svelte-inspector': 4.0.1(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.48.3)(vite@6.4.1))(svelte@5.48.3)(vite@6.4.1)
+      '@sveltejs/vite-plugin-svelte-inspector': 4.0.1(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.48.5)(vite@6.4.1))(svelte@5.48.5)(vite@6.4.1)
       debug: 4.4.3
       deepmerge: 4.3.1
       kleur: 4.1.5
       magic-string: 0.30.21
-      svelte: 5.48.3
+      svelte: 5.48.5
       vite: 6.4.1
       vitefu: 1.1.1(vite@6.4.1)
     transitivePeerDependencies:
@@ -1284,15 +1251,15 @@ snapshots:
 
   axobject-query@4.1.0: {}
 
-  bits-ui@2.15.4(@internationalized/date@3.10.1)(svelte@5.48.3):
+  bits-ui@2.15.4(@internationalized/date@3.10.1)(svelte@5.48.5):
     dependencies:
-      '@floating-ui/core': 1.7.3
-      '@floating-ui/dom': 1.7.4
+      '@floating-ui/core': 1.7.4
+      '@floating-ui/dom': 1.7.5
       '@internationalized/date': 3.10.1
       esm-env: 1.2.2
-      runed: 0.35.1(svelte@5.48.3)
-      svelte: 5.48.3
-      svelte-toolbelt: 0.10.6(svelte@5.48.3)
+      runed: 0.35.1(svelte@5.48.5)
+      svelte: 5.48.5
+      svelte-toolbelt: 0.10.6(svelte@5.48.5)
       tabbable: 6.4.0
     transitivePeerDependencies:
       - '@sveltejs/kit'
@@ -1312,7 +1279,7 @@ snapshots:
       '@codemirror/autocomplete': 6.20.0
       '@codemirror/commands': 6.10.1
       '@codemirror/language': 6.12.1
-      '@codemirror/lint': 6.9.2
+      '@codemirror/lint': 6.9.3
       '@codemirror/search': 6.6.0
       '@codemirror/state': 6.5.4
       '@codemirror/view': 6.39.11
@@ -1399,11 +1366,11 @@ snapshots:
 
   nanoid@3.3.11: {}
 
-  phosphor-svelte@3.1.0(svelte@5.48.3)(vite@6.4.1):
+  phosphor-svelte@3.1.0(svelte@5.48.5)(vite@6.4.1):
     dependencies:
       estree-walker: 3.0.3
       magic-string: 0.30.21
-      svelte: 5.48.3
+      svelte: 5.48.5
     optionalDependencies:
       vite: 6.4.1
 
@@ -1452,12 +1419,12 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.57.0
       fsevents: 2.3.3
 
-  runed@0.35.1(svelte@5.48.3):
+  runed@0.35.1(svelte@5.48.5):
     dependencies:
       dequal: 2.0.3
       esm-env: 1.2.2
       lz-string: 1.5.0
-      svelte: 5.48.3
+      svelte: 5.48.5
 
   sade@1.8.1:
     dependencies:
@@ -1475,35 +1442,35 @@ snapshots:
     dependencies:
       inline-style-parser: 0.2.7
 
-  svelte-check@4.3.5(picomatch@4.0.3)(svelte@5.48.3)(typescript@5.9.3):
+  svelte-check@4.3.5(picomatch@4.0.3)(svelte@5.48.5)(typescript@5.9.3):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       chokidar: 4.0.3
       fdir: 6.5.0(picomatch@4.0.3)
       picocolors: 1.1.1
       sade: 1.8.1
-      svelte: 5.48.3
+      svelte: 5.48.5
       typescript: 5.9.3
     transitivePeerDependencies:
       - picomatch
 
-  svelte-toolbelt@0.10.6(svelte@5.48.3):
+  svelte-toolbelt@0.10.6(svelte@5.48.5):
     dependencies:
       clsx: 2.1.1
-      runed: 0.35.1(svelte@5.48.3)
+      runed: 0.35.1(svelte@5.48.5)
       style-to-object: 1.0.14
-      svelte: 5.48.3
+      svelte: 5.48.5
     transitivePeerDependencies:
       - '@sveltejs/kit'
 
-  svelte2tsx@0.7.46(svelte@5.48.3)(typescript@5.9.3):
+  svelte2tsx@0.7.46(svelte@5.48.5)(typescript@5.9.3):
     dependencies:
       dedent-js: 1.0.1
       scule: 1.3.0
-      svelte: 5.48.3
+      svelte: 5.48.5
       typescript: 5.9.3
 
-  svelte@5.48.3:
+  svelte@5.48.5:
     dependencies:
       '@jridgewell/remapping': 2.3.5
       '@jridgewell/sourcemap-codec': 1.5.5
