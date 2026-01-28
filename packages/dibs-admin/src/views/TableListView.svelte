@@ -57,9 +57,7 @@
     let currentTable = $derived(ctx.schema?.tables.find((t) => t.name === tableName) ?? null);
     let columns = $derived(currentTable?.columns ?? []);
     let limit = $derived(getPageSize(ctx.config, tableName));
-    let displayColumns = $derived(
-        getDisplayColumns(columns, getListConfig(ctx.config, tableName)),
-    );
+    let displayColumns = $derived(getDisplayColumns(columns, getListConfig(ctx.config, tableName)));
 
     // Load data when table changes or query params change
     $effect(() => {
@@ -154,9 +152,15 @@
             const displayCol =
                 labelCol ??
                 tableInfo.columns.find((c) =>
-                    ["name", "title", "label", "display_name", "username", "email", "slug"].includes(
-                        c.name.toLowerCase(),
-                    ),
+                    [
+                        "name",
+                        "title",
+                        "label",
+                        "display_name",
+                        "username",
+                        "email",
+                        "slug",
+                    ].includes(c.name.toLowerCase()),
                 );
 
             const selectCols = [pkCol.name];
@@ -403,6 +407,7 @@
         align-items: center;
         justify-content: center;
         color: var(--muted-foreground);
+        margin-top: 2em;
     }
 
     .status-message.empty {
