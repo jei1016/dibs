@@ -184,6 +184,7 @@ fn convert_param_type(ty: &schema::ParamType) -> ParamType {
         schema::ParamType::Uuid => ParamType::Uuid,
         schema::ParamType::Decimal => ParamType::Decimal,
         schema::ParamType::Timestamp => ParamType::Timestamp,
+        schema::ParamType::Bytes => ParamType::Bytes,
         schema::ParamType::Optional(inner) => {
             // Take the first inner type
             let inner_ty = inner

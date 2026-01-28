@@ -1355,6 +1355,7 @@ fn param_type_to_rust(ty: &ParamType) -> String {
         ParamType::Uuid => "Uuid".to_string(),
         ParamType::Decimal => "Decimal".to_string(),
         ParamType::Timestamp => "Timestamp".to_string(),
+        ParamType::Bytes => "Vec<u8>".to_string(),
         ParamType::Optional(inner) => format!("Option<{}>", param_type_to_rust(inner)),
     }
 }

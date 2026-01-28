@@ -69,6 +69,7 @@ pub enum ParamType {
     Uuid,
     Decimal,
     Timestamp,
+    Bytes,
     Optional(Box<ParamType>),
 }
 
