@@ -50,6 +50,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.39.11
         version: 6.39.11
+      '@mateothegreat/svelte5-router':
+        specifier: ^2.16.19
+        version: 2.16.19(svelte@5.48.3)
       '@replit/codemirror-vim':
         specifier: ^6.3.0
         version: 6.3.0(@codemirror/commands@6.10.1)(@codemirror/language@6.12.1)(@codemirror/search@6.6.0)(@codemirror/state@6.5.4)(@codemirror/view@6.39.11)
@@ -83,10 +86,13 @@ importers:
     dependencies:
       '@bearcove/roam-core':
         specifier: github:bearcove/roam#path:typescript/packages/roam-core
-        version: https://codeload.github.com/bearcove/roam/tar.gz/4ce7057b25d572cfb6a9d78e018d5e4abe7bc0e2#path:typescript/packages/roam-core
+        version: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-core
+      '@bearcove/roam-postcard':
+        specifier: github:bearcove/roam#path:typescript/packages/roam-postcard
+        version: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-postcard
       '@bearcove/roam-ws':
         specifier: github:bearcove/roam#path:typescript/packages/roam-ws
-        version: https://codeload.github.com/bearcove/roam/tar.gz/4ce7057b25d572cfb6a9d78e018d5e4abe7bc0e2#path:typescript/packages/roam-ws
+        version: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-ws
     devDependencies:
       typescript:
         specifier: ^5.0.0
@@ -94,28 +100,24 @@ importers:
 
 packages:
 
-  '@bearcove/roam-core@https://codeload.github.com/bearcove/roam/tar.gz/4ce7057b25d572cfb6a9d78e018d5e4abe7bc0e2#path:typescript/packages/roam-core':
-    resolution: {path: typescript/packages/roam-core, tarball: https://codeload.github.com/bearcove/roam/tar.gz/4ce7057b25d572cfb6a9d78e018d5e4abe7bc0e2}
+  '@bearcove/roam-core@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-core':
+    resolution: {path: typescript/packages/roam-core, tarball: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991}
     version: 0.1.0
 
-  '@bearcove/roam-core@https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-core':
-    resolution: {path: typescript/packages/roam-core, tarball: https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49}
+  '@bearcove/roam-postcard@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-postcard':
+    resolution: {path: typescript/packages/roam-postcard, tarball: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991}
     version: 0.1.0
 
-  '@bearcove/roam-postcard@https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-postcard':
-    resolution: {path: typescript/packages/roam-postcard, tarball: https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49}
+  '@bearcove/roam-tcp@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-tcp':
+    resolution: {path: typescript/packages/roam-tcp, tarball: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991}
     version: 0.1.0
 
-  '@bearcove/roam-tcp@https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-tcp':
-    resolution: {path: typescript/packages/roam-tcp, tarball: https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49}
+  '@bearcove/roam-wire@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-wire':
+    resolution: {path: typescript/packages/roam-wire, tarball: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991}
     version: 0.1.0
 
-  '@bearcove/roam-wire@https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-wire':
-    resolution: {path: typescript/packages/roam-wire, tarball: https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49}
-    version: 0.1.0
-
-  '@bearcove/roam-ws@https://codeload.github.com/bearcove/roam/tar.gz/4ce7057b25d572cfb6a9d78e018d5e4abe7bc0e2#path:typescript/packages/roam-ws':
-    resolution: {path: typescript/packages/roam-ws, tarball: https://codeload.github.com/bearcove/roam/tar.gz/4ce7057b25d572cfb6a9d78e018d5e4abe7bc0e2}
+  '@bearcove/roam-ws@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-ws':
+    resolution: {path: typescript/packages/roam-ws, tarball: https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991}
     version: 0.1.0
 
   '@codemirror/autocomplete@6.20.0':
@@ -367,6 +369,11 @@ packages:
 
   '@marijn/find-cluster-break@1.0.2':
     resolution: {integrity: sha512-l0h88YhZFyKdXIFNfSWpyjStDjGHwZ/U7iobcK1cQQD8sejsONdQtTVU+1wVN1PBw40PiiHB1vA5S7VTfQiP9g==}
+
+  '@mateothegreat/svelte5-router@2.16.19':
+    resolution: {integrity: sha512-SNkR15x3b0HLNM33BORKF9U6elHHWZxg42yikNUKW1YNjkYRBLBgDkVSJTqRIC6aE8Wt4vqmKKmHzQTK2EKiqA==}
+    peerDependencies:
+      svelte: ^5.0.0
 
   '@replit/codemirror-vim@6.3.0':
     resolution: {integrity: sha512-aTx931ULAMuJx6xLf7KQDOL7CxD+Sa05FktTDrtLaSy53uj01ll3Zf17JdKsriER248oS55GBzg0CfCTjEneAQ==}
@@ -796,30 +803,25 @@ packages:
 
 snapshots:
 
-  '@bearcove/roam-core@https://codeload.github.com/bearcove/roam/tar.gz/4ce7057b25d572cfb6a9d78e018d5e4abe7bc0e2#path:typescript/packages/roam-core':
+  '@bearcove/roam-core@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-core':
     dependencies:
-      '@bearcove/roam-postcard': https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-postcard
-      '@bearcove/roam-wire': https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-wire
+      '@bearcove/roam-postcard': https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-postcard
+      '@bearcove/roam-wire': https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-wire
 
-  '@bearcove/roam-core@https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-core':
+  '@bearcove/roam-postcard@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-postcard': {}
+
+  '@bearcove/roam-tcp@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-tcp':
     dependencies:
-      '@bearcove/roam-postcard': https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-postcard
-      '@bearcove/roam-wire': https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-wire
+      '@bearcove/roam-core': https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-core
 
-  '@bearcove/roam-postcard@https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-postcard': {}
-
-  '@bearcove/roam-tcp@https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-tcp':
+  '@bearcove/roam-wire@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-wire':
     dependencies:
-      '@bearcove/roam-core': https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-core
+      '@bearcove/roam-postcard': https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-postcard
 
-  '@bearcove/roam-wire@https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-wire':
+  '@bearcove/roam-ws@https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-ws':
     dependencies:
-      '@bearcove/roam-postcard': https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-postcard
-
-  '@bearcove/roam-ws@https://codeload.github.com/bearcove/roam/tar.gz/4ce7057b25d572cfb6a9d78e018d5e4abe7bc0e2#path:typescript/packages/roam-ws':
-    dependencies:
-      '@bearcove/roam-core': https://codeload.github.com/bearcove/roam/tar.gz/4ce7057b25d572cfb6a9d78e018d5e4abe7bc0e2#path:typescript/packages/roam-core
-      '@bearcove/roam-tcp': https://codeload.github.com/bearcove/roam/tar.gz/b2b79c6e1c9265b057ac37c1991d3f7026bbfa49#path:typescript/packages/roam-tcp
+      '@bearcove/roam-core': https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-core
+      '@bearcove/roam-tcp': https://codeload.github.com/bearcove/roam/tar.gz/a63b39c621a4bdfd8bd02ddd8266908c2365b991#path:typescript/packages/roam-tcp
 
   '@codemirror/autocomplete@6.20.0':
     dependencies:
@@ -1071,6 +1073,10 @@ snapshots:
       '@lezer/highlight': 1.2.3
 
   '@marijn/find-cluster-break@1.0.2': {}
+
+  '@mateothegreat/svelte5-router@2.16.19(svelte@5.48.3)':
+    dependencies:
+      svelte: 5.48.3
 
   '@replit/codemirror-vim@6.3.0(@codemirror/commands@6.10.1)(@codemirror/language@6.12.1)(@codemirror/search@6.6.0)(@codemirror/state@6.5.4)(@codemirror/view@6.39.11)':
     dependencies:

@@ -3,6 +3,7 @@
     import PlusIcon from "phosphor-svelte/lib/PlusIcon";
     import HouseIcon from "phosphor-svelte/lib/HouseIcon";
     import DynamicIcon from "./components/DynamicIcon.svelte";
+    import { goto } from "@mateothegreat/svelte5-router";
     import type {
         SquelServiceCaller,
         SchemaInfo,
@@ -48,9 +49,10 @@
     interface Props {
         client: SquelServiceCaller;
         config?: DibsAdminConfig;
+        basePath?: string;
     }
 
-    let { client, config }: Props = $props();
+    let { client, config, basePath = "" }: Props = $props();
 
     // Schema state
     let schema = $state<SchemaInfo | null>(null);
@@ -72,8 +74,8 @@
     let offset = $state(0);
 
     // Router state - prevent infinite loops
-    let isUpdatingFromHash = false;
-    let isUpdatingHash = false;
+    let isUpdatingFromUrl = false;
+    let isUpdatingUrl = false;
     let schemaLoaded = false; // Prevent double-loading on mount
 
     // Editor state
@@ -105,7 +107,7 @@
     );
 
     // ==========================================================================
-    // Hash-based routing
+    // Path-based routing (using svelte5-router)
     // ==========================================================================
 
     // Op tags to URL-safe strings
@@ -126,26 +128,24 @@
         Object.entries(opToString).map(([k, v]) => [v, k]),
     );
 
-    function encodeHash(): string {
-        // Dashboard view: #/
-        if (showDashboard) {
-            return "#/";
+    function encodePath(): string {
+        // Dashboard view: basePath or basePath/
+        if (showDashboard || !selectedTable) {
+            return basePath || "/";
         }
 
-        if (!selectedTable) return "";
-
-        // Detail view: #/table/pk
+        // Detail view: basePath/table/pk
         if (editingPk !== null) {
-            return `#/${encodeURIComponent(selectedTable)}/${encodeURIComponent(editingPk)}`;
+            return `${basePath}/${encodeURIComponent(selectedTable)}/${encodeURIComponent(editingPk)}`;
         }
 
-        // Create view: #/table/new
+        // Create view: basePath/table/new
         if (isCreating) {
-            return `#/${encodeURIComponent(selectedTable)}/new`;
+            return `${basePath}/${encodeURIComponent(selectedTable)}/new`;
         }
 
-        // List view: #/table?filters
-        let hash = `#/${encodeURIComponent(selectedTable)}`;
+        // List view: basePath/table?filters
+        let path = `${basePath}/${encodeURIComponent(selectedTable)}`;
         const params = new URLSearchParams();
 
         for (const f of filters) {
@@ -170,7 +170,7 @@
         }
 
         const qs = params.toString();
-        return qs ? `${hash}?${qs}` : hash;
+        return qs ? `${path}?${qs}` : path;
     }
 
     function encodeValue(v: Value): string {
@@ -179,7 +179,7 @@
         return String(v.value);
     }
 
-    type DecodedHash = {
+    type DecodedUrl = {
         table: string | null;
         filters: Filter[];
         sort: Sort | null;
@@ -189,13 +189,20 @@
         isDashboard: boolean; // If showing dashboard
     };
 
-    function decodeHash(hash: string, schemaInfo?: SchemaInfo | null): DecodedHash | null {
-        if (!hash || !hash.startsWith("#/")) return null;
+    function decodeUrl(pathname: string, search: string, schemaInfo?: SchemaInfo | null): DecodedUrl | null {
+        // Strip basePath from pathname
+        let path = pathname;
+        if (basePath && pathname.startsWith(basePath)) {
+            path = pathname.slice(basePath.length);
+        }
 
-        const withoutHash = hash.slice(2); // Remove "#/"
+        // Normalize: remove leading slash
+        if (path.startsWith("/")) {
+            path = path.slice(1);
+        }
 
-        // Dashboard view: empty path after #/
-        if (withoutHash === "" || withoutHash === "/") {
+        // Dashboard view: empty path
+        if (path === "" || path === "/") {
             return {
                 table: null,
                 filters: [],
@@ -207,13 +214,12 @@
             };
         }
 
-        const [pathPart, queryPart] = withoutHash.split("?");
-        const pathSegments = pathPart.split("/").map((s) => decodeURIComponent(s));
+        const pathSegments = path.split("/").map((s) => decodeURIComponent(s));
 
         const table = pathSegments[0];
         if (!table) return null;
 
-        // Check for detail view: #/table/pk or #/table/new
+        // Check for detail view: basePath/table/pk or basePath/table/new
         let rowPk: string | null = null;
         let isCreating = false;
         if (pathSegments.length > 1) {
@@ -228,20 +234,22 @@
         // Find table info for type inference
         const tableInfo = schemaInfo?.tables.find((t) => t.name === table) ?? currentTable;
 
-        const filters: Filter[] = [];
-        let sort: Sort | null = null;
-        let offset = 0;
+        const decodedFilters: Filter[] = [];
+        let decodedSort: Sort | null = null;
+        let decodedOffset = 0;
 
-        if (queryPart) {
-            const params = new URLSearchParams(queryPart);
+        if (search) {
+            // Remove leading ? if present
+            const queryString = search.startsWith("?") ? search.slice(1) : search;
+            const params = new URLSearchParams(queryString);
             for (const [key, value] of params.entries()) {
                 if (key === "_sort") {
                     const [field, dir] = value.split("__");
                     if (field && dir) {
-                        sort = { field, dir: dir === "desc" ? { tag: "Desc" } : { tag: "Asc" } };
+                        decodedSort = { field, dir: dir === "desc" ? { tag: "Desc" } : { tag: "Asc" } };
                     }
                 } else if (key === "_offset") {
-                    offset = parseInt(value, 10) || 0;
+                    decodedOffset = parseInt(value, 10) || 0;
                 } else if (key.includes("__")) {
                     const [field, opStr] = key.split("__");
                     const opTag = stringToOp[opStr];
@@ -251,11 +259,11 @@
                             const values = value
                                 .split(",")
                                 .map((v) => decodeValue(v, field, tableInfo));
-                            filters.push({ field, op, value: { tag: "Null" }, values });
+                            decodedFilters.push({ field, op, value: { tag: "Null" }, values });
                         } else if (opTag === "IsNull" || opTag === "IsNotNull") {
-                            filters.push({ field, op, value: { tag: "Null" }, values: [] });
+                            decodedFilters.push({ field, op, value: { tag: "Null" }, values: [] });
                         } else {
-                            filters.push({
+                            decodedFilters.push({
                                 field,
                                 op,
                                 value: decodeValue(value, field, tableInfo),
@@ -267,7 +275,7 @@
             }
         }
 
-        return { table, filters, sort, offset, rowPk, isCreating, isDashboard: false };
+        return { table, filters: decodedFilters, sort: decodedSort, offset: decodedOffset, rowPk, isCreating, isDashboard: false };
     }
 
     function decodeValue(str: string, field: string, tableInfo?: TableInfo | null): Value {
@@ -290,21 +298,22 @@
         return { tag: "String", value: str };
     }
 
-    function updateHash() {
-        if (isUpdatingFromHash) return;
-        isUpdatingHash = true;
-        const newHash = encodeHash();
-        if (window.location.hash !== newHash) {
-            window.history.pushState(null, "", newHash || window.location.pathname);
+    function updateUrl() {
+        if (isUpdatingFromUrl) return;
+        isUpdatingUrl = true;
+        const newPath = encodePath();
+        const currentPath = window.location.pathname + window.location.search;
+        if (currentPath !== newPath) {
+            goto(newPath);
         }
-        isUpdatingHash = false;
+        isUpdatingUrl = false;
     }
 
-    async function applyHash() {
-        const decoded = decodeHash(window.location.hash, schema);
+    async function applyUrl() {
+        const decoded = decodeUrl(window.location.pathname, window.location.search, schema);
         if (!decoded) return;
 
-        isUpdatingFromHash = true;
+        isUpdatingFromUrl = true;
 
         // Handle dashboard view
         if (decoded.isDashboard) {
@@ -313,7 +322,7 @@
             editingPk = null;
             editingRow = null;
             isCreating = false;
-            isUpdatingFromHash = false;
+            isUpdatingFromUrl = false;
             return;
         }
 
@@ -345,7 +354,7 @@
             isCreating = false;
         }
 
-        isUpdatingFromHash = false;
+        isUpdatingFromUrl = false;
     }
 
     async function loadRowByPk(pkStr: string) {
@@ -378,15 +387,15 @@
     // Listen for popstate (back/forward)
     $effect(() => {
         function handlePopState() {
-            if (isUpdatingHash) return;
-            applyHash();
+            if (isUpdatingUrl) return;
+            applyUrl();
             loadData();
         }
         window.addEventListener("popstate", handlePopState);
         return () => window.removeEventListener("popstate", handlePopState);
     });
 
-    // Update hash when state changes
+    // Update URL when state changes
     $effect(() => {
         // Depend on these values
         void selectedTable;
@@ -396,9 +405,9 @@
         void editingPk;
         void isCreating;
         void showDashboard;
-        // Update hash (but not during initial load or when applying hash)
+        // Update URL (but not during initial load or when applying URL)
         if (schema && (selectedTable || showDashboard)) {
-            updateHash();
+            updateUrl();
         }
     });
 
@@ -416,10 +425,10 @@
         try {
             schema = await client.schema();
             if (schema.tables.length > 0) {
-                // Check if there's a hash to apply
-                const decoded = decodeHash(window.location.hash, schema);
+                // Check if there's a URL path to apply
+                const decoded = decodeUrl(window.location.pathname, window.location.search, schema);
 
-                // Handle dashboard view from hash
+                // Handle dashboard view from URL
                 if (decoded?.isDashboard && hasDashboard(config)) {
                     showDashboard = true;
                     // No need to load table data for dashboard
@@ -428,8 +437,8 @@
                     decoded.table &&
                     schema.tables.some((t) => t.name === decoded.table)
                 ) {
-                    // Apply hash state for table view
-                    isUpdatingFromHash = true;
+                    // Apply URL state for table view
+                    isUpdatingFromUrl = true;
                     showDashboard = false;
                     selectedTable = decoded.table;
                     filters = decoded.filters;
@@ -446,7 +455,7 @@
                         isCreating = true;
                     }
 
-                    isUpdatingFromHash = false;
+                    isUpdatingFromUrl = false;
 
                     // Load data first, then load specific row if needed
                     await loadData();
