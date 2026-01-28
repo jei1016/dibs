@@ -45,15 +45,13 @@
         getRowExpand,
         getImageColumns,
     } from "@bearcove/dibs-admin/lib/config";
+    import { schemaCache } from "./lib/schema-cache.js";
 
     interface Props {
         client: SquelServiceCaller;
         config?: DibsAdminConfig;
         basePath?: string;
     }
-
-    // Module-level schema cache to persist across remounts
-    const schemaCache = new WeakMap<SquelServiceCaller, SchemaInfo>();
 
     let { client, config, basePath = "" }: Props = $props();
 
