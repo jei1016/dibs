@@ -44,18 +44,26 @@
   // Match against our routes
   const match = $derived(matchRoutes(routes, relativePath, currentQuery));
 
-  // Set context for nested routes
+  // Set context for child components.
+  // basePath stays the same (what parent consumed) - NOT including our consumed path.
+  // This way navigation to sibling routes within this Router works correctly.
+  // Only nested Routers (via wildcard routes) get an extended basePath.
+  const childBasePath = $derived(
+    match?.route.path.endsWith("/*")
+      ? basePath + match.consumedPath.replace(/\/\*$/, "")
+      : basePath
+  );
+
   $effect(() => {
     if (match) {
-      const newBasePath = basePath + match.consumedPath;
       setRouterContext({
-        basePath: newBasePath,
+        basePath: childBasePath,
         currentPath,
         currentQuery,
         navigate: (path, query) => {
           const url = query
-            ? `${newBasePath}${path}?${new URLSearchParams(query)}`
-            : `${newBasePath}${path}`;
+            ? `${basePath}${path}?${new URLSearchParams(query)}`
+            : `${basePath}${path}`;
           window.history.pushState(null, "", url);
         },
       });
