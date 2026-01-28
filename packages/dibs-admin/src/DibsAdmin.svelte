@@ -52,10 +52,13 @@
         basePath?: string;
     }
 
+    // Module-level schema cache to persist across remounts
+    const schemaCache = new WeakMap<SquelServiceCaller, SchemaInfo>();
+
     let { client, config, basePath = "" }: Props = $props();
 
-    // Schema state
-    let schema = $state<SchemaInfo | null>(null);
+    // Schema state - initialize from cache if available
+    let schema = $state<SchemaInfo | null>(schemaCache.get(client) ?? null);
     let selectedTable = $state<string | null>(null);
     let loading = $state(false);
     let error = $state<string | null>(null);
@@ -420,65 +423,74 @@
         if (schemaLoaded) return;
         schemaLoaded = true;
 
-        loading = true;
-        error = null;
-        try {
-            schema = await client.schema();
-            if (schema.tables.length > 0) {
-                // Check if there's a URL path to apply
-                const decoded = decodeUrl(window.location.pathname, window.location.search, schema);
+        // Use cached schema if available
+        const cached = schemaCache.get(client);
+        if (cached) {
+            schema = cached;
+        } else {
+            loading = true;
+            error = null;
+            try {
+                schema = await client.schema();
+                schemaCache.set(client, schema);
+            } catch (e) {
+                error = e instanceof Error ? e.message : String(e);
+            } finally {
+                loading = false;
+            }
+            if (!schema) return;
+        }
 
-                // Handle dashboard view from URL
-                if (decoded?.isDashboard && hasDashboard(config)) {
-                    showDashboard = true;
-                    // No need to load table data for dashboard
-                } else if (
-                    decoded &&
-                    decoded.table &&
-                    schema.tables.some((t) => t.name === decoded.table)
-                ) {
-                    // Apply URL state for table view
-                    isUpdatingFromUrl = true;
-                    showDashboard = false;
-                    selectedTable = decoded.table;
-                    filters = decoded.filters;
-                    sort = decoded.sort;
-                    offset = decoded.offset;
-                    breadcrumbs = [{ table: decoded.table, label: decoded.table }];
+        if (schema.tables.length > 0) {
+            // Check if there's a URL path to apply
+            const decoded = decodeUrl(window.location.pathname, window.location.search, schema);
 
-                    // Handle detail/create views
-                    if (decoded.rowPk !== null) {
-                        editingPk = decoded.rowPk;
-                        isCreating = false;
-                    } else if (decoded.isCreating) {
-                        editingPk = null;
-                        isCreating = true;
-                    }
+            // Handle dashboard view from URL
+            if (decoded?.isDashboard && hasDashboard(config)) {
+                showDashboard = true;
+                // No need to load table data for dashboard
+            } else if (
+                decoded &&
+                decoded.table &&
+                schema.tables.some((t) => t.name === decoded.table)
+            ) {
+                // Apply URL state for table view
+                isUpdatingFromUrl = true;
+                showDashboard = false;
+                selectedTable = decoded.table;
+                filters = decoded.filters;
+                sort = decoded.sort;
+                offset = decoded.offset;
+                breadcrumbs = [{ table: decoded.table, label: decoded.table }];
 
-                    isUpdatingFromUrl = false;
+                // Handle detail/create views
+                if (decoded.rowPk !== null) {
+                    editingPk = decoded.rowPk;
+                    isCreating = false;
+                } else if (decoded.isCreating) {
+                    editingPk = null;
+                    isCreating = true;
+                }
 
-                    // Load data first, then load specific row if needed
-                    await loadData();
+                isUpdatingFromUrl = false;
 
-                    // If viewing a specific row, load it
-                    if (decoded.rowPk !== null) {
-                        await loadRowByPk(decoded.rowPk);
-                    }
-                } else if (hasDashboard(config)) {
-                    // Default to dashboard if configured
-                    showDashboard = true;
-                } else {
-                    // Default to first visible table
-                    const firstVisible = schema.tables.find((t) => !isTableHidden(config, t.name));
-                    if (firstVisible) {
-                        selectTable(firstVisible.name);
-                    }
+                // Load data first, then load specific row if needed
+                await loadData();
+
+                // If viewing a specific row, load it
+                if (decoded.rowPk !== null) {
+                    await loadRowByPk(decoded.rowPk);
+                }
+            } else if (hasDashboard(config)) {
+                // Default to dashboard if configured
+                showDashboard = true;
+            } else {
+                // Default to first visible table
+                const firstVisible = schema.tables.find((t) => !isTableHidden(config, t.name));
+                if (firstVisible) {
+                    selectTable(firstVisible.name);
                 }
             }
-        } catch (e) {
-            error = e instanceof Error ? e.message : String(e);
-        } finally {
-            loading = false;
         }
     }
 
